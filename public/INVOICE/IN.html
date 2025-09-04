@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Compliance First - Invoice</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        /*
+        * General body and background styles, from user's original CSS.
+        */
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+            color: #333;
+            background-color: rgba(255, 255, 255, 0.132);
+            height: 100%;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 100vw;
+            background-image: url('bg.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-color: rgb(255, 255, 255);
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        .logo {
+            width: 220px;
+            margin-top: 30px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .company-name {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-top: 10px;
+            color: #003d5f;
+        }
+
+        /*
+        * Button styles, from user's original CSS.
+        */
+        .button-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 60px;
+            gap: 30px;
+        }
+
+        .option-btn {
+            background: linear-gradient(135deg, #65ac4c, #4e8c3c);
+            color: white;
+            padding: 25px 40px;
+            border-radius: 16px;
+            font-weight: bold;
+            text-decoration: none;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            font-size: 18px;
+            min-width: 220px;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(255,255,255,0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .option-btn:hover::before {
+            transform: translateX(0);
+        }
+
+        .option-btn:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 12px 20px rgba(0,0,0,0.25);
+        }
+
+        .fetch-box {
+            background: #ffffff;
+            border: 2px solid #65ac4c;
+            border-radius: 12px;
+            max-width: 600px;
+            margin: 20px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .fetch-container input {
+            padding: 10px;
+            width: 70%;
+            margin-top: 10px;
+            border-radius: 6px;
+            border: 1px solid #aaa;
+        }
+
+        .fetch-container button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #65ac4c, #4e8c3c);
+            color: rgb(255, 255, 255);
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .fetch-container button::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(255,255,255,0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .fetch-container button:hover::before {
+            transform: translateX(0);
+        }
+
+        .fetch-box button:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 10px 16px rgba(0,0,0,0.25);
+        }
+
+        .result {
+            text-align: left;
+            margin-top: 20px;
+            color: #333;
+        }
+
+        .home-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            padding: 12px 22px;
+            background: linear-gradient(135deg, #65ac4c, #4e8c3c);
+            color: white;
+            text-decoration: none;
+            border-radius: 16px;
+            font-weight: bold;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .home-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .home-btn:hover::before {
+            transform: translateX(0);
+        }
+
+        .home-btn:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        /*
+        * Fetch container styles, from user's original CSS.
+        */
+        .fetch-container {
+            border: 2px solid #65ac4c;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 520px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .fetch-container1 {
+            border: 2px solid #65ac4c;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 1500px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .director-box {
+            border: 1px solid #65ac4c;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .director-box1 {
+            flex: 0 0 auto;
+            min-width: 280px;
+            border: 2px solid #65ac4c;
+            border-radius: 8px;
+            padding: 16px;
+            background: #f9f9f9;
+            margin: 0 auto;
+        }
+
+        .fetch-container label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .result {
+            margin-top: 20px;
+        }
+
+        .editable-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .editable-row label {
+            width: 100px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .editable-field {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 16px;
+            border: 1px solid #65ac4c;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .editable-field:focus {
+            outline: none;
+            border: 2px solid #65ac4c;
+            box-shadow: 0 0 5px #65ac4c;
+        }
+
+        textarea.editable-field {
+            resize: vertical;
+        }
+
+        input[type="text"], textarea {
+            border: 1px solid #65ac4c;
+        }
+
+        .convert-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #convert {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #65ac4c, #4e8c3c);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-size: 16px;
+            padding: 12px 24px;
+        }
+
+        #convert::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(255,255,255,0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            pointer-events: none;
+        }
+
+        #convert:hover::before {
+            transform: translateX(0);
+        }
+
+        #convert:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 10px 16px rgba(0,0,0,0.25);
+        }
+
+        /* Disabled state */
+        #convert:disabled {
+            background: linear-gradient(135deg, #a4c89c, #a4c89c);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        #convert:disabled::before {
+            transform: translateX(-100%);
+        }
+
+        .button-center {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .editable-row1 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .editable-row1 label {
+            width: 100px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .editable-field {
+            flex-grow: 1;
+        }
+
+        /*
+        * NEW styles for the invoice table and totals section.
+        */
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            color: #003d5f;
+            border-bottom: 2px solid #65ac4c;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+
+        .header-cell {
+            flex: 1;
+            padding: 0 8px;
+        }
+
+        .header-cell:nth-child(1) {
+            flex: 2; /* Description column is wider */
+        }
+        .header-cell:last-child {
+            flex: 0 0 50px; /* Action cell is fixed width */
+            text-align: center;
+        }
+
+        .invoice-table-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .description-cell {
+            flex: 2;
+        }
+
+        .fee-cell {
+            flex: 1;
+        }
+
+        .action-cell {
+            flex: 0 0 40px;
+            text-align: center;
+        }
+
+        .description-field {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #65ac4c;
+            border-radius: 8px;
+            box-sizing: border-box;
+            resize: vertical;
+            min-height: 50px;
+        }
+
+        .description-field:focus {
+            outline: none;
+            border: 2px solid #65ac4c;
+            box-shadow: 0 0 5px #65ac4c;
+        }
+
+        .fee-field {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #65ac4c;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        .fee-field:focus {
+            outline: none;
+            border: 2px solid #65ac4c;
+            box-shadow: 0 0 5px #65ac4c;
+        }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            color: #e57373;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: color 0.3s ease;
+        }
+
+        .remove-btn:hover {
+            color: #ef5350;
+        }
+
+        .add-row-button-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .add-item-btn {
+            background: linear-gradient(135deg, #65ac4c, #4e8c3c);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-size: 16px;
+            padding: 12px 24px;
+        }
+
+        .add-item-btn:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 10px 16px rgba(0,0,0,0.25);
+        }
+
+        .add-item-btn i {
+            margin-right: 8px;
+        }
+
+        .total-container {
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 2px solid #65ac4c;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 20px;
+            font-weight: bold;
+        }
+        
+        .total-item {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .total-value {
+            color: #003d5f;
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+    <header>
+        <img src="logo.png" alt="Logo" class="logo"/>
+        <h1 class="company-name">CFPL Invoice</h1>
+    </header>
+    <main>
+        <div id="invoiceDetails" class="fetch-container">
+            <div class="editable-row">
+                <label>To:</label>
+                <input type="text" id="TO" placeholder="Compliance First Pvt.Ltd" class="editable-field" required>
+            </div>
+            <div class="editable-row">
+                <label>DATE:</label>
+                <input type="text" id="DATE" class="editable-field" placeholder="DD-MM-YYYY" required>
+            </div>
+            <div class="editable-row">
+                <label>Enquiry ID:</label>
+                <input type="text" id="ID" class="editable-field" placeholder="001">
+            </div>
+            <div class="editable-row">
+                <label>Content:</label>
+                <textarea id="CONTENT" class="editable-field" rows="12" required>Welcome and thank you for choosing COMPLIANCE FIRST PRIVATE LIMITED for your Partnership Incorporation. We are excited to have you join our family of enterprising clients. Starting a new registration is a positive milestone that unlocks compliance, transparency, and fresh growth opportunities. Our experienced team ensures your registration process is efficient and empowering, guiding you at every step to simplify business expansion for you.</textarea>
+            </div>
+        </div>
+
+        <div class="fetch-container1">
+            <div class="table-header">
+                <div class="header-cell">Description</div>
+                <div class="header-cell">Govt Fee</div>
+                <div class="header-cell">Professional Fee</div>
+                <div class="header-cell"></div>
+            </div>
+            <div id="invoiceItems">
+                </div>
+            <div class="add-row-button-container">
+                <button id="addItemBtn" class="add-item-btn">
+                    <i class="fa fa-plus"></i> Add Item
+                </button>
+            </div>
+            <div class="total-container">
+                <div class="total-item">
+                    <span>Total Govt Fee:</span>
+                    <span class="total-value" id="totalGovtFee">0.00</span>
+                </div>
+                <div class="total-item">
+                    <span>Total Professional Fee:</span>
+                    <span class="total-value" id="totalProfessionalFee">0.00</span>
+                </div>
+                <div class="total-item">
+                    <span>Grand Total:</span>
+                    <span class="total-value" id="grandTotal">0.00</span>
+                </div>
+                <div class="total-item">
+                    <span>In Words:</span>
+                    <span class="total-value" id="grandTotalWords">Zero Only</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="button-center" id="convertContainer">
+            <button id="convert" disabled>Convert to Word</button>
+        </div>
+    </main>
+
+    <a href="#" class="home-btn" onclick="event.preventDefault(); history.back();">← BACK</a>
+    
+    <script>
+        // Use a function to format the date
+        function formatDateForDeed(value) {
+            // Placeholder function as the original code's logic for this part seemed incomplete
+            const parts = value.split('-');
+            if (parts.length === 3) {
+                const day = parts[0];
+                const month = parts[1];
+                const year = parts[2];
+                return `${day}/${month}/${year}`;
+            }
+            return '';
+        }
+
+        document.getElementById('DATE').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 2 && value.length <= 4) {
+                value = value.slice(0, 2) + '-' + value.slice(2);
+            } else if (value.length > 4) {
+                value = value.slice(0, 2) + '-' + value.slice(2, 4) + '-' + value.slice(4, 8);
+            }
+            e.target.value = value;
+
+            let parts = value.split('-');
+            if (parts.length === 3 && parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
+                let day = parseInt(parts[0], 10);
+                let month = parseInt(parts[1], 10);
+                let year = parseInt(parts[2], 10);
+                if (month > 12 || day > 31 || year < 1900 || year > 2100) {
+                    e.target.style.backgroundColor = '#66ac4c12';
+                } else {
+                    e.target.style.backgroundColor = '';
+                }
+            }
+            checkRequiredFields();
+        });
+
+        // Initialize a counter for dynamic IDs
+        let itemCounter = 0;
+
+        // Add a new row for an invoice item
+        function addInvoiceItem() {
+            itemCounter++;
+            const invoiceItems = document.getElementById('invoiceItems');
+            const itemRow = document.createElement('div');
+            itemRow.classList.add('invoice-table-row');
+            itemRow.setAttribute('data-id', itemCounter); // Add a unique data attribute
+            itemRow.innerHTML = `
+                <div class="description-cell">
+                    <textarea class="description-field" id="description_${itemCounter}" rows="2" placeholder="Description"></textarea>
+                </div>
+                <div class="fee-cell">
+                    <input type="number" class="fee-field govt-fee-field" id="govtFee_${itemCounter}" placeholder="0.00" min="0">
+                </div>
+                <div class="fee-cell">
+                    <input type="number" class="fee-field professional-fee-field" id="professionalFee_${itemCounter}" placeholder="0.00" min="0">
+                </div>
+                <div class="action-cell">
+                    <button class="remove-btn" data-id="${itemCounter}">
+                        <i class="fa fa-trash-o"></i>
+                    </button>
+                </div>
+            `;
+            invoiceItems.appendChild(itemRow);
+
+            // Add event listeners for the new row
+            const removeBtn = itemRow.querySelector('.remove-btn');
+            removeBtn.addEventListener('click', () => {
+                itemRow.remove();
+                updateTotals();
+                checkRequiredFields();
+            });
+
+            const feeInputs = itemRow.querySelectorAll('.fee-field');
+            feeInputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    updateTotals();
+                    checkRequiredFields();
+                });
+            });
+
+            checkRequiredFields();
+        }
+
+        // Function to convert a number to words in the Indian numbering system
+        function numberToIndianWords(num) {
+            if (num === 0) return "Zero Only";
+            if (num < 0) return "Negative " + numberToIndianWords(-num);
+            
+            const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+            const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+            
+            function convertUpToThousand(n) {
+                let s = "";
+                if (n > 99) {
+                    s += ones[Math.floor(n / 100)] + " Hundred ";
+                    n %= 100;
+                }
+                if (n > 19) {
+                    s += tens[Math.floor(n / 10)] + " ";
+                    n %= 10;
+                }
+                if (n > 0) {
+                    s += ones[n] + " ";
+                }
+                return s;
+            }
+
+            let result = "";
+            let crores = Math.floor(num / 10000000);
+            num %= 10000000;
+            let lakhs = Math.floor(num / 100000);
+            num %= 100000;
+            let thousands = Math.floor(num / 1000);
+            num %= 1000;
+
+            if (crores > 0) {
+                result += convertUpToThousand(crores) + "Crore ";
+            }
+            if (lakhs > 0) {
+                result += convertUpToThousand(lakhs) + "Lakh ";
+            }
+            if (thousands > 0) {
+                result += convertUpToThousand(thousands) + "Thousand ";
+            }
+            if (num > 0) {
+                result += convertUpToThousand(num);
+            }
+            
+            return result.trim() + " Only";
+        }
+
+        function updateTotals() {
+            let totalGovt = 0;
+            let totalProfessional = 0;
+            
+            const govtFeeFields = document.querySelectorAll('.govt-fee-field');
+            govtFeeFields.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                totalGovt += value;
+            });
+
+            const professionalFeeFields = document.querySelectorAll('.professional-fee-field');
+            professionalFeeFields.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                totalProfessional += value;
+            });
+
+            const grandTotal = totalGovt + totalProfessional;
+
+            document.getElementById('totalGovtFee').textContent = totalGovt.toFixed(2);
+            document.getElementById('totalProfessionalFee').textContent = totalProfessional.toFixed(2);
+            document.getElementById('grandTotal').textContent = grandTotal.toFixed(2);
+            document.getElementById('grandTotalWords').textContent = numberToIndianWords(grandTotal);
+        }
+
+        const convert = document.getElementById("convert");
+
+        function checkRequiredFields() {
+    // Check the main required fields first
+    const toField = document.getElementById("TO").value.trim();
+    const dateField = document.getElementById("DATE").value.trim();
+    const contentField = document.getElementById("CONTENT").value.trim();
+
+    const mainFieldsFilled = toField !== '' && dateField !== '' && contentField !== '';
+
+    // Then check if there's at least one valid invoice item
+    const invoiceRows = document.querySelectorAll('#invoiceItems .invoice-table-row');
+    let hasAtLeastOneItem = false;
+    
+    // Check if there's at least one invoice row
+    if (invoiceRows.length > 0) {
+        hasAtLeastOneItem = true;
+    }
+
+    // The button should be enabled only if all main fields are filled AND there is at least one invoice item (even if its fields are empty)
+    // A better approach would be to check if at least one invoice item is actually filled out.
+    let hasPopulatedItem = false;
+    invoiceRows.forEach(row => {
+        const description = row.querySelector('.description-field').value.trim();
+        const govtFee = parseFloat(row.querySelector('.govt-fee-field').value);
+        const professionalFee = parseFloat(row.querySelector('.professional-fee-field').value);
+
+        if (description || (!isNaN(govtFee) && govtFee > 0) || (!isNaN(professionalFee) && professionalFee > 0)) {
+            hasPopulatedItem = true;
+        }
+    });
+
+    const shouldEnable = mainFieldsFilled && hasPopulatedItem;
+    document.getElementById("convert").disabled = !shouldEnable;
+}
+
+        document.addEventListener("input", checkRequiredFields);
+        document.getElementById('addItemBtn').addEventListener('click', addInvoiceItem);
+        
+        // Add one initial row when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            addInvoiceItem();
+            checkRequiredFields();
+            updateTotals();
+        });
+
+        convert.addEventListener("click", async function() {
+            const invoiceItems = [];
+            const rows = document.querySelectorAll('#invoiceItems .invoice-table-row');
+            rows.forEach(row => {
+                const rowId = row.getAttribute('data-id');
+                const description = document.getElementById(`description_${rowId}`).value;
+                const govtFee = parseFloat(document.getElementById(`govtFee_${rowId}`).value) || 0;
+                const professionalFee = parseFloat(document.getElementById(`professionalFee_${rowId}`).value) || 0;
+
+                invoiceItems.push({
+                    description: description,
+                    govtFee: govtFee,
+                    professionalFee: professionalFee
+                });
+            });
+
+            const data = {
+                page: "CFPL",
+                TO: document.getElementById("TO").value,
+                DATE: document.getElementById("DATE").value,
+                ID: document.getElementById("ID").value,
+                CONTENT: document.getElementById("CONTENT").value,
+                invoiceItems: invoiceItems
+            };
+
+            try {
+                console.log("Sending to /generate:", data);
+                const res = await fetch("/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+
+                console.log("Response status:", res.status);
+
+                if (!res.ok) {
+                    const errText = await res.text();
+                    console.error("Server error:", errText);
+                    return;
+                }
+
+                const blob = await res.blob();
+                console.log("Received blob size:", blob.size);
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "CFPL Invoice.docx";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                console.error("Fetch error:", err);
+            }
+        });
+    </script>
+</body>
+</html>

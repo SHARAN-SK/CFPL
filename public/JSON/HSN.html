@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GST Registration - Compliance First</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="background"></div>
+    <a href="#" class="home-btn" onclick="event.preventDefault(); history.back();">← BACK</a>
+    <header>
+        <img src="logo.png" alt="Logo" class="logo"/>
+        <h1 class="company-name">Convert CSV to Json</h1>
+    </header>
+<body>
+  <div class="fetch-container">
+    <div class="editable-row">
+    <label>Your GSTIN</label>
+    <input id="gstin" placeholder="33ANWPJ9534D1ZP" />
+    </div>
+
+    <div class="editable-row">
+    <label>Return Period (MMYYYY)</label>
+    <input id="fp" placeholder="072025" />
+    </div>
+
+    <div class="editable-row">
+    <label>Select HSN CSV file</label>
+    <input type="file" id="csvFile" accept=".csv" />
+    </div>
+
+
+    <button id="convertBtn" disabled>Convert & Download JSON</button>
+
+    <details style="margin-top:12px">
+      <summary>Preview JSON</summary>
+      <pre id="preview"></pre>
+    </details>
+  </div>
+
+<script>
+function round2(n){ return Math.round((+n + 1e-9) * 100)/100; }
+
+document.getElementById('csvFile').addEventListener('change',()=>{
+  document.getElementById('convertBtn').disabled = !document.getElementById('csvFile').files.length;
+});
+
+document.getElementById('convertBtn').addEventListener('click',()=>{
+  const gstin=document.getElementById('gstin').value.trim();
+  const fp=document.getElementById('fp').value.trim();
+  Papa.parse(document.getElementById('csvFile').files[0],{
+    header:true,skipEmptyLines:true,
+    complete: function(res){
+      const rows=res.data;
+      const out={gstin,fp,version:"GST3.2.2",hash:"hash",hsn:{hsn_b2c:[]}};
+
+      rows.forEach((r,i)=>{
+        const txval=round2(r["Taxable Value"]||r.txval||0);
+        const rt=round2(r["Rate"]||r.rt||0);
+        const csamt=round2(r["Cess Amount"]||r.csamt||0);
+
+        // default intrastate split (CGST + SGST)
+        const camt=round2(txval*rt/200);
+        const samt=round2(txval*rt/200);
+
+        const entry={
+          num:i+1,
+          hsn_sc:String(
+            r["HSN Code"] ||
+            r["HSN"] ||
+            r["HSN/SAC"] ||
+            r["hsn_sc"] ||
+            ""
+          ).trim(),
+          user_desc:String(
+            r["User Desc"] ||
+            r["user_desc"] ||
+            r["Description"] ||
+            ""
+          ).trim(),
+          desc:String(
+            r["System Desc"] ||
+            r["desc"] ||
+            r["Description"] ||
+            ""
+          ).trim(),
+          uqc:r["UQC"]||r.uqc||"NA",
+          qty:+(r["Quantity"]||r.qty||0),
+          rt:rt,
+          txval:txval,
+          iamt:0,
+          samt:samt,
+          camt:camt,
+          csamt:csamt
+        };
+        out.hsn.hsn_b2c.push(entry);
+      });
+
+      const jsonStr = JSON.stringify(out);
+      document.getElementById('preview').textContent=jsonStr.slice(0,4000);
+
+      const blob=new Blob([jsonStr],{type:"application/json"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      a.download=`returns_${fp}_R1_${gstin}_hsn_offline.json`;
+      a.click();
+    }
+  });
+});
+</script>
+</body>
+</html>

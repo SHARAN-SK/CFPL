@@ -1,0 +1,58 @@
+{
+  "name": "cfpl",
+  "version": "1.0.0",
+  "description": "CFPL Electron App with Express Login System",
+  "main": "main.js",
+  "scripts": {
+    "start": "concurrently \"node server.js\" \"electron .\" --kill-others",
+    "electron": "electron .",
+    "server": "node server.js",
+    "dist": "electron-builder",
+    "postinstall": "patch-package"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "electron": "^26.6.10",
+    "electron-builder": "^24.9.1",
+    "electron-updater": "^6.2.1",
+    "patch-package": "^8.0.0",
+    "postinstall-postinstall": "^2.1.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "googleapis": "^108.0.0",
+    "jsdom": "^26.1.0",
+    "node-fetch": "^2.7.0",
+    "open": "^10.2.0",
+    "pizzip": "^3.2.0"
+  },
+  "build": {
+    "appId": "com.yourcompany.cfpl",
+    "productName": "CFPL",
+    "asar": false,
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.ico"
+    },
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "server.js",
+      "credentials.json",
+      "public/**/*",
+      "templates/**/*",
+      "!node_modules/*electron*/**"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "SHARAN-SK",
+        "repo": "CFPL"
+      }
+    ]
+  }
+}

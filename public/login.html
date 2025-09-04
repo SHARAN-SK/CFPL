@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Compliance First</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="background"></div>
+  <header>
+    <img src="logo.png" alt="Logo" class="logo"/>
+    <h1 class="company-name">Compliance First Private Limited</h1>
+  </header>
+
+  <main>
+    <div id="fetchSection" class="fetch-container">
+      <h3>ENTER YOUR CREDENTIALS</h3>
+
+      <div class="editable-row">
+        <label>USER NAME:</label>
+        <input type="text" id="USER" class="editable-field" placeholder="SHARAN" maxlength="20" required>
+      </div>
+
+      <div class="editable-row">
+        <label>PASSWORD:</label>
+        <input type="password" id="PASSWORD" class="editable-field" placeholder="Enter your password" required>
+      </div>
+    </div>
+
+    <div class="button-container">
+      <button id="loginBtn" class="option-btn">Login</button>
+    </div>
+  </main>
+
+  <!-- Toast (replaces alert) -->
+  <div id="toast" class="toast" role="alert" aria-live="assertive" aria-hidden="true">
+    <div class="toast__icon" aria-hidden="true">⚠️</div>
+    <div class="toast__content">
+      <strong class="toast__title">Error</strong>
+      <div class="toast__message">Something went wrong.</div>
+    </div>
+    <button id="toastClose" class="toast__close" aria-label="Close">×</button>
+    <div class="toast__progress"></div>
+  </div>
+
+  <script>
+    // Toast helpers
+    (function(){
+      const toast = document.getElementById('toast');
+      const closeBtn = document.getElementById('toastClose');
+      const msgEl = toast.querySelector('.toast__message');
+      const titleEl = toast.querySelector('.toast__title');
+      const progressEl = toast.querySelector('.toast__progress');
+      let hideTimer;
+
+      function hideToast(){
+        toast.classList.remove('is-visible', 'toast--error', 'toast--success');
+        toast.setAttribute('aria-hidden','true');
+        progressEl.style.transition = 'none';
+        progressEl.style.width = '0%';
+      }
+
+      function showToast(message, { title='Error', type='error', duration=3500 } = {}){
+        clearTimeout(hideTimer);
+        toast.classList.remove('toast--error', 'toast--success');
+        toast.classList.add(type === 'success' ? 'toast--success' : 'toast--error');
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+
+        // progress animation
+        progressEl.style.transition = 'none';
+        progressEl.style.width = '100%';
+        requestAnimationFrame(() => {
+          progressEl.style.transition = `width ${duration}ms linear`;
+          progressEl.style.width = '0%';
+        });
+
+        toast.classList.add('is-visible');
+        toast.setAttribute('aria-hidden','false');
+        hideTimer = setTimeout(hideToast, duration);
+      }
+
+      window.showError = (m, opts={}) => showToast(m, { title:'Error', type:'error', ...opts });
+      window.showSuccess = (m, opts={}) => showToast(m, { title:'Success', type:'success', ...opts });
+      window.hideToast = hideToast;
+
+      closeBtn.addEventListener('click', hideToast);
+    })();
+
+    // Login handler
+    document.getElementById("loginBtn").addEventListener("click", async (e) => {
+      e.preventDefault();
+
+      const btn = e.currentTarget;
+      const username = document.getElementById("USER").value.trim();
+      const password = document.getElementById("PASSWORD").value.trim();
+
+      if (!username || !password) {
+        showError("Please enter both username and password.");
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        btn.classList.add('is-loading');
+
+        const response = await fetch("http://localhost:3000/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include", // send cookies for session
+          body: JSON.stringify({ username, password })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showSuccess(result.message || "Login successful!", { duration: 1200 });
+          // small delay so user sees the success toast
+          setTimeout(() => { window.location.href = "index.html"; }, 900);
+        } else {
+          showError(result.error || result.message || "Login failed.");
+        }
+      } catch (error) {
+        console.error("❌ Fetch failed:", error);
+        showError("Network error. Please try again.");
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GST Registration - Compliance First</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="background"></div>
+    <a href="#" class="home-btn" onclick="event.preventDefault(); history.back();">← BACK</a>
+    <header>
+        <img src="logo.png" alt="Logo" class="logo"/>
+        <h1 class="company-name">Convert CSV to Json</h1>
+    </header>
+<body>
+  <div class="fetch-container">
+    <div class="editable-row">
+    <label>Your GSTIN</label>
+    <input id="gstin" placeholder="33AAAAA0000A1Z5" />
+    </div>
+
+    <div class="editable-row">
+    <label>Return Period (MMYYYY)</label>
+    <input id="fp" placeholder="072025" />
+    </div>
+
+
+    <div class="editable-row">
+    <label>Select B2B CSV file</label>
+    <input type="file" id="csvFile" accept=".csv" />
+    </div>
+
+    <button id="convertBtn" disabled>Convert & Download JSON</button>
+
+    <details style="margin-top:12px">
+      <summary>Preview JSON</summary>
+      <pre id="preview"></pre>
+    </details>
+  </div>
+
+<script>
+function round2(n){ return Math.round((+n + 1e-9) * 100)/100; }
+function formatDateDDMMYYYY(s){
+  if(!s) return "";
+  s = String(s).trim().replace(/[/.]/g,'-');
+  const monMap = {"JAN":"01","FEB":"02","MAR":"03","APR":"04","MAY":"05","JUN":"06",
+    "JUL":"07","AUG":"08","SEP":"09","OCT":"10","NOV":"11","DEC":"12"};
+  const m = s.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{2,4})$/);
+  if(m){ let d=m[1].padStart(2,'0'); let mm=monMap[m[2].toUpperCase()]||m[2]; let y=m[3].length===2?((+m[3]>=50?'19':'20')+m[3]):m[3]; return `${d}-${mm}-${y}`; }
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(iso) return `${iso[3]}-${iso[2]}-${iso[1]}`;
+  const p=s.split('-'); if(p.length===3){let [a,b,c]=p;a=a.padStart(2,'0');b=b.padStart(2,'0');if(c.length===2)c=(+c>=50?'19':'20')+c;return `${a}-${b}-${c}`;}
+  return s;
+}
+function posCode(v){ const s=String(v||"").trim(); const m=s.match(/^(\d{2})/); if(m) return m[1]; const m2=s.match(/(\d{2})$/); return m2?m2[1]:s; }
+
+document.getElementById('csvFile').addEventListener('change',()=>{
+  document.getElementById('convertBtn').disabled = !document.getElementById('csvFile').files.length;
+});
+
+document.getElementById('convertBtn').addEventListener('click',()=>{
+  const gstin=document.getElementById('gstin').value.trim();
+  const fp=document.getElementById('fp').value.trim();
+  if(!gstin||!fp) return alert("Enter GSTIN and FP");
+  Papa.parse(document.getElementById('csvFile').files[0],{
+    header:true,skipEmptyLines:true,
+    complete: function(res){
+      const rows=res.data;
+      const supplierState=gstin.slice(0,2);
+      const out={gstin,fp,version:"GST3.2.2",hash:"hash",b2b:[]};
+      const groups={};
+
+      rows.forEach(r=>{
+        const ctin=String(r["GSTIN/UIN of Recipient"]||r.CTIN||"").trim();
+        if(!ctin) return;
+        if(!groups[ctin]) groups[ctin]=[];
+        const pos=posCode(r["Place Of Supply"]||r.POS);
+        const rt=round2(r["Rate"]||r.Rate||0);
+        const txval=round2(r["Taxable Value"]||r.TaxableValue||0);
+        const csamt=round2(r["Cess Amount"]||r.Cess||0);
+
+        // intrastate vs interstate
+        let itm_det={txval,rt};
+        if(pos===supplierState){
+          itm_det.camt=round2(txval*rt/200);
+          itm_det.samt=round2(txval*rt/200);
+        } else {
+          itm_det.iamt=round2(txval*rt/100);
+        }
+        itm_det.csamt=csamt;
+
+        // enforce key order
+        const ordered={};
+        ordered.txval=itm_det.txval; ordered.rt=itm_det.rt;
+        if('camt' in itm_det) ordered.camt=itm_det.camt;
+        if('samt' in itm_det) ordered.samt=itm_det.samt;
+        if('iamt' in itm_det && itm_det.iamt!==0) ordered.iamt=itm_det.iamt;
+        ordered.csamt=itm_det.csamt;
+
+        const invVal=round2(txval+(ordered.camt||0)+(ordered.samt||0)+(ordered.iamt||0)+ordered.csamt);
+
+        const inv={
+          inum:String(r["Invoice Number"]||r.InvoiceNumber||"").trim(),
+          idt:formatDateDDMMYYYY(r["Invoice date"]||r.InvoiceDate),
+          val:invVal,
+          pos,
+          rchrg:"N",
+          inv_typ:"R",
+          itms:[{num:501,itm_det:ordered}]
+        };
+        groups[ctin].push(inv);
+      });
+
+      for(const ctin in groups) out.b2b.push({ctin,inv:groups[ctin]});
+      const jsonStr=JSON.stringify(out,null,2);
+      document.getElementById('preview').textContent=jsonStr.slice(0,4000);
+
+      const blob=new Blob([jsonStr],{type:"application/json"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      a.download=`returns_${fp}_R1_${gstin}_offline.json`;
+      a.click();
+    }
+  });
+});
+</script>
+</body>
+</html>

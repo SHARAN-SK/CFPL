@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Compliance First - Deed of Partnership</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="background"></div>
+  <header>
+    <img src="logo.png" alt="Logo" class="logo"/>
+    <h1 class="company-name">Partnership DEED</h1>
+  </header>
+  <main>
+    <!-- Company Name & Deed Date -->
+    <div id="fetchSectionCompany" class="fetch-container">
+      <div class="editable-row">
+        <label>COMPANY NAME:</label>
+        <input type="text" id="COMPANY_NAME" placeholder="Compliance First Pvt.Ltd" class="editable-field" required>
+      </div>
+
+      <div class="editable-row">
+        <label>EFFECTIVE DATE:</label>
+        <input type="text" id="DATE" class="editable-field" placeholder="DD-MM-YYYY" required>
+      </div>
+
+      <div class="editable-row">
+        <label>DEED DATE:</label>
+        <input type="text" id="DEED_DATE" class="editable-field" placeholder="06th day of January, 2025" readonly>
+      </div>
+
+      <div class="editable-row">
+         <label>REGISTERED OFFICE ADDRESS:</label>
+         <textarea id="OFFICE_ADDRESS" class="editable-field" placeholder="Firm's Head Office Address" rows="3" required></textarea>
+        </div>
+        <div class="editable-row">
+        <label>NATURE OF BUSINESS:</label>
+       <textarea id="NATURE_OF_BUSINESS" class="editable-field" placeholder="Describe the business activities" rows="3" required></textarea>
+        </div>
+    </div>
+
+    <!-- Partner count buttons -->
+    <div id="partnerButtons" class="button-container" style="display:none;">
+      <button data-count="2" class="option-btn">2 Partners</button>
+      <button data-count="3" class="option-btn">3 Partners</button>
+      <button data-count="4" class="option-btn">4 Partners</button>
+      <button data-count="5" class="option-btn">5 Partners</button>
+    </div>
+
+    <!-- Dynamic partner fields -->
+    <div id="fetchSectionDetails" class="fetch-container1"></div>
+
+    <!-- Centered Convert button -->
+    <div class="button-center" id="convertContainer" style="display:none;">
+      <button id="convert" disabled>Convert to Word</button>
+    </div>
+
+    <script>
+function formatDateForDeed(dateString) {
+  const [day, month, year] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  const daySuffix = (d) => {
+    if (d > 3 && d < 21) return 'th';
+    switch (d % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  };
+  const monthNames = ["January", "February", "March", "April", "May", "June",
+   "July", "August", "September", "October", "November", "December"
+  ];
+  return `${date.getDate()}${daySuffix(date.getDate())} day of ${monthNames[date.getMonth()]}, ${date.getFullYear()}`;
+}
+
+document.getElementById('DATE').addEventListener('input', function(e) {
+  let value = e.target.value.replace(/\D/g, '');
+  if (value.length > 2 && value.length <= 4) {
+    value = value.slice(0, 2) + '-' + value.slice(2);
+  } else if (value.length > 4) {
+    value = value.slice(0, 2) + '-' + value.slice(2, 4) + '-' + value.slice(4, 8);
+  }
+  e.target.value = value;
+  let parts = value.split('-');
+  const deedDateInput = document.getElementById('DEED_DATE');
+  const partnerButtons = document.getElementById('partnerButtons');
+  if (parts.length === 3 && parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
+    let day = parseInt(parts[0], 10);
+    let month = parseInt(parts[1], 10);
+    let year = parseInt(parts[2], 10);
+    if (month > 12 || day > 31 || year < 1900 || year > 2100) {
+      e.target.style.backgroundColor = '#66ac4c12';
+      partnerButtons.style.display = 'none';
+      deedDateInput.value = '';
+    } else {
+      e.target.style.backgroundColor = '';
+      partnerButtons.style.display = 'flex';
+      deedDateInput.value = formatDateForDeed(value);
+    }
+  } else {
+    partnerButtons.style.display = 'none';
+    deedDateInput.value = '';
+  }
+});
+
+// When clicking partner buttons
+document.querySelectorAll('#partnerButtons button').forEach(btn => {
+  btn.addEventListener('click', function() {
+    let count = parseInt(this.dataset.count);
+    loadPartnerFields(count);
+  });
+});
+
+function loadPartnerFields(count) {
+  let container = document.getElementById("fetchSectionDetails");
+  document.getElementById('convertContainer').style.display = 'flex';
+  checkRequiredFields(); // check if button can be enabled
+
+  container.innerHTML = "";
+
+  for (let i = 1; i <= count; i++) {
+    container.innerHTML += `
+      <div class="director-box1" data-index="${i}">
+        <h3>Partner ${i}</h3>
+        <div class="editable-row">
+          <label>NAME:</label>
+          <input type="text" id="PERSON_${i}" class="editable-field" placeholder="Name" required>
+        </div>
+        <div class="editable-row">
+          <label>Son of:</label>
+          <input type="text" id="FATHER_${i}" class="editable-field" placeholder="Father Name" required>
+        </div>
+        <div class="editable-row">
+          <label>PAN NUM:</label>
+          <input type="text" id="PAN_${i}" class="editable-field" placeholder="eg.AAAPA1234A" required>
+        </div>
+        <div class="editable-row">
+          <label>ADDRESS:</label>
+          <textarea id="ADDRESS_${i}" class="editable-field" placeholder="Address" rows="3" required></textarea>
+        </div>
+        <div class="editable-row">
+          <label>SHARE Rs:</label>
+          <input type="text" id="SHARE-Rs_${i}" placeholder="eg.10,000" class="editable-field" required>
+        </div>
+        <div class="editable-row">
+          <label>SHARE %:</label>
+          <input type="text" id="SHARE-%_${i}" placeholder="25%" class="editable-field" required>
+        </div>
+      </div>`;
+  }
+
+  // Attach formatting for SHARE-Rs and SHARE-%
+  for (let i = 1; i <= count; i++) {
+    document.getElementById(`SHARE-Rs_${i}`).addEventListener("input", function (e) {
+      let value = e.target.value.replace(/,/g, "").replace(/[^\d]/g, "");
+      e.target.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    });
+
+    document.getElementById(`SHARE-%_${i}`).addEventListener("input", function () {
+      let value = this.value.replace(/[^0-9.]/g, "");
+      this.value = value ? value + "%" : "";
+    });
+  }
+  checkRequiredFields(); // Enable Convert button if all fields filled
+}
+
+// Enable convert button only if all required fields are filled
+const convert = document.getElementById("convert");
+
+function checkRequiredFields() {
+  const requiredFields = document.querySelectorAll("input[required], textarea[required]");
+  let allFilled = true;
+  requiredFields.forEach(field => {
+    if (!field.value.trim()) allFilled = false;
+  });
+  convert.disabled = !allFilled;
+}
+
+document.addEventListener("input", checkRequiredFields);
+
+// Handle Convert button click
+convert.addEventListener("click", async function() {
+  const partners = [];
+  document.querySelectorAll(".director-box1").forEach((box, i) => {
+    const idx = i + 1;
+    partners.push({
+      name: document.getElementById(`PERSON_${idx}`).value || "",
+      father: document.getElementById(`FATHER_${idx}`).value || "",
+      pan: document.getElementById(`PAN_${idx}`).value || "",
+      address: document.getElementById(`ADDRESS_${idx}`).value || "",
+      shareRs: document.getElementById(`SHARE-Rs_${idx}`).value || "",
+      sharePercent: document.getElementById(`SHARE-%_${idx}`).value || ""
+    });
+  });
+
+  // === ADDED: compute totals across ALL partners (not visible) ===
+  const formatCommas = (n) =>
+    n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  let totalRupees = 0;
+  let totalPercent = 0;
+
+  partners.forEach(p => {
+    const rs = parseFloat(String(p.shareRs).replace(/,/g, "").replace(/[^\d.]/g, "")) || 0;
+    const pct = parseFloat(String(p.sharePercent).replace(/[^0-9.]/g, "")) || 0;
+    totalRupees += rs;
+    totalPercent += pct;
+  });
+
+  const TOTAL1 = formatCommas(Math.round(totalRupees)); // e.g., "100,000"
+  const TOTAL2 = (Number.isInteger(totalPercent) ? totalPercent : totalPercent.toFixed(2)) + "%"; // e.g., "100%"
+
+  const data = {
+    page: "Partnership Deed",
+    COMPANY_NAME: document.getElementById("COMPANY_NAME").value,
+    DEED_DATE: document.getElementById("DEED_DATE").value,
+    DATE: document.getElementById("DATE").value,
+    OFFICE_ADDRESS: document.getElementById("OFFICE_ADDRESS").value,
+    //NATURE_OF_BUSINESS: document.getElementById("NATURE_OF_BUSINESS").value,
+    //BANK_OPERATORS: document.getElementById("BANK_OPERATORS").value,
+    //CAN_BORROW: document.getElementById("CAN_BORROW").value,
+
+    // push computed hidden totals (not shown in UI)
+    TOTAL1: TOTAL1,
+    TOTAL2: TOTAL2,
+
+    partners
+  };
+
+  try {
+    console.log("Sending to /generate:", data); // 🔍 Log the payload before sending
+
+    const res = await fetch("/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+
+    console.log("Response status:", res.status); // 🔍 Log server status
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("Server error:", errText);
+      return;
+    }
+
+    const blob = await res.blob();
+    console.log("Received blob size:", blob.size); // 🔍 Log size of returned file
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Partnership Deed.docx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("Fetch error:", err);
+  }
+});
+    </script>
+  </main>
+
+  <a href="#" class="home-btn" onclick="event.preventDefault(); history.back();">← BACK</a>
+</body>
+</html>

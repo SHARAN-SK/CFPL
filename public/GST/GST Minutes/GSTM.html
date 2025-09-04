@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GST Registration - Compliance First</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="background"></div>
+    <a href="#" class="home-btn" onclick="event.preventDefault(); history.back();">← BACK</a>
+    <header>
+        <img src="logo.png" alt="Logo" class="logo"/>
+        <h1 class="company-name">GST Minutes</h1>
+    </header>
+
+    <main>
+        <div id="fetchSection" class="fetch-container">
+            <label for="company">Enter Company Name:</label>
+            <input type="text" id="company" placeholder="e.g. Compliance First Pvt. Ltd" />
+            <button onclick="generatePrompt()">Fetch</button>
+            
+            <button id="pasteParseBtn" onclick="parseResponse()" style="display:none; margin-top:10px;">
+                Paste & Parse
+            </button>
+            <div id="parsedDetails" style="margin-top: 0px;"></div>
+        </div>
+
+        <div id="directorsSection"></div>
+        <div id="CA-BOX" class="fetch-container"></div>
+
+        <div class="button-center">
+        <button id="convert" style="display:none; margin-top: 20px;">Convert to Document</button>
+        </div>
+    </main>
+
+    <script>
+        // ========================= HELPER FUNCTIONS =========================
+
+        // Function to update the auditor field value
+        function updateAuditorField() {
+            const firmValue = document.getElementById("FIRM")?.value || "";
+            const frnValue = document.getElementById("FRN")?.value || "";
+            const nameValue = document.getElementById("NAME")?.value || "";
+            const desValue = document.getElementById("DES")?.value || "";
+            const mrnValue = document.getElementById("MRN")?.value || "";
+            const placeValue = document.getElementById("PLACE")?.value || "";
+
+            const auditorField = document.getElementById("AUDITOR");
+            if (auditorField) {
+                auditorField.value = `${firmValue}, Chartered Accountants, FRN:${frnValue}, ${nameValue}${desValue}, having MRN:${mrnValue},${placeValue}`;
+            }
+        }
+
+        // Function to format a date into a "Deed" format
+        function formatDateForDeed(dateString) {
+            const [day, month, year] = dateString.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+
+            if (isNaN(date.getTime())) {
+                return "Invalid Date";
+            }
+
+            const daySuffix = (d) => {
+                if (d > 3 && d < 21) return 'th';
+                switch (d % 10) {
+                    case 1: return 'st';
+                    case 2: return 'nd';
+                    case 3: return 'rd';
+                    default: return 'th';
+                }
+            };
+
+            const monthNames = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ];
+
+            return `${date.getDate()}${daySuffix(date.getDate())} day of ${monthNames[date.getMonth()]}, ${date.getFullYear()}`;
+        }
+        
+        // Function to update distinctive numbers for all directors
+        function updateDistinctiveNumbers() {
+            const directorBoxes = document.querySelectorAll(".director-box1");
+            let distinctiveFrom = 1;
+
+            directorBoxes.forEach((box) => {
+                const equitySharesInput = box.querySelector('[id^="EQUITY_SHARES_"]');
+                const distinctiveFromInput = box.querySelector('[id^="FROM_"]');
+                const distinctiveToInput = box.querySelector('[id^="TO_"]');
+                
+                const shares = parseInt(equitySharesInput.value, 10);
+                
+                if (!isNaN(shares) && shares > 0) {
+                    const distinctiveTo = distinctiveFrom + shares - 1;
+                    distinctiveFromInput.value = distinctiveFrom;
+                    distinctiveToInput.value = distinctiveTo;
+                    distinctiveFrom = distinctiveTo + 1;
+                } else {
+                    distinctiveFromInput.value = '';
+                    distinctiveToInput.value = '';
+                }
+            });
+            checkRequiredFields();
+        }
+
+        // Function to set up all event listeners after the DOM is rendered
+        function setupEventListeners() {
+            // Event listener for the main date field
+            const dateInput = document.getElementById('DATE');
+            if (dateInput) {
+                dateInput.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value.length > 2 && value.length <= 4) {
+                        value = value.slice(0, 2) + '-' + value.slice(2);
+                    } else if (value.length > 4) {
+                        value = value.slice(0, 2) + '-' + value.slice(2, 4) + '-' + value.slice(4, 8);
+                    }
+                    e.target.value = value;
+                    
+                    const parts = value.split('-');
+                    const dayField = document.getElementById('DAY');
+                    const deedDateField = document.getElementById('DEED_DATE');
+                    
+                    if (dayField && deedDateField) {
+                        dayField.value = '';
+                        deedDateField.value = '';
+                        e.target.style.backgroundColor = '';
+                    
+                        if (parts.length === 3 && parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
+                            const day = parseInt(parts[0], 10);
+                            const month = parseInt(parts[1], 10);
+                            const year = parseInt(parts[2], 10);
+                            
+                            if (month > 12 || day > 31 || year < 1900 || year > 2100) {
+                                e.target.style.backgroundColor = '#66ac4c40';
+                                return;
+                            }
+                            
+                            const dateObj = new Date(year, month - 1, day);
+                            if (!isNaN(dateObj.getTime())) {
+                                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                                dayField.value = days[dateObj.getDay()];
+                                deedDateField.value = formatDateForDeed(value);
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Event listeners for the auditor fields to automatically update
+            const auditorFields = ["FIRM", "FRN", "NAME", "DES", "MRN", "PLACE"];
+            auditorFields.forEach(id => {
+                const field = document.getElementById(id);
+                if (field) {
+                    field.addEventListener('input', updateAuditorField);
+                }
+            });
+            
+            // Event listeners for equity shares to update distinctive numbers
+            document.querySelectorAll('[id^="EQUITY_SHARES_"]').forEach(field => {
+                field.addEventListener('input', updateDistinctiveNumbers);
+            });
+        }
+
+        // Function to check if all required fields are filled
+        function checkRequiredFields() {
+            const convertButton = document.getElementById("convert");
+            if (!convertButton) return;
+            const requiredFields = document.querySelectorAll("#parsedDetails [required], #directorsSection [required]");
+            let allFilled = true;
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    allFilled = false;
+                }
+            });
+            convertButton.disabled = !allFilled;
+        }
+
+        // ========================= MAIN FUNCTIONS =========================
+
+        function generatePrompt() {
+            const company = document.getElementById("company").value.trim();
+            if (!company) return;
+            const prompt = `Fetch based on public sources like MCA Portal, ZaubaCorp, InstaFinancials, The Company Check, and other verified Indian company/LLP databases.
+
+Give ONLY the following EXACT information for the company named "${company}" in the following format:
+
+Company Name: [Company Name]
+[CIN or LLPIN Label]: [CIN or LLPIN]
+Date of Incorporation: [DD Month YYYY]
+Company Type: [Private Limited/LLP/etc]
+Registered Office Address: [Address]
+
+[Directors or Partners Label] :
+NAME: [Name], DESIGNATION: [Designation], DIN: [DIN]
+
+Rules for search and output:
+1. Conduct an EXTREME, deep, and exhaustive search across at least three verified public sources.
+2. Cross-verify all details from a minimum of two sources to confirm accuracy before generating the final output.
+3. The response MUST include all specified fields.
+4. If the company is an LLP, provide the LLPIN. If it is a Private Limited company, provide the CIN. Do not show both. The label should dynamically display as either "CIN:" or "LLPIN:".
+5. The label should dynamically display as either "Directors:" or "Partners:".
+6. All DIN numbers for all directors MUST be fetched and displayed. Do not use placeholders like 'Not Available'. The data will be available in the open sources. If a DIN is genuinely not found after an exhaustive search, explicitly state it for that specific director, but only as a last resort after all other avenues have been exhausted.
+7. The date of incorporation and registered address must be complete and accurate.
+8. Double-check all details one last time before outputting the final result to ensure no information is missing or incorrect.
+`;
+            
+            navigator.clipboard.writeText(prompt).then(() => {
+                window.open("https://gemini.google.com/app", "_blank");
+                document.querySelector("label[for='company']").style.display = "none";
+                document.getElementById("company").style.display = "none";
+                document.querySelector("#fetchSection button").style.display = "none";
+                document.getElementById("pasteParseBtn").style.display = "inline-block";
+                document.getElementById("fetchSection").scrollIntoView({ behavior: "smooth" });
+            });
+        }
+
+        function parseResponse() {
+            navigator.clipboard.readText()
+                .then((text) => {
+                    const response = text;
+                    const companyNameMatch = response.match(/Company Name:\s*(.*)/);
+                    const idMatch = response.match(/(CIN|LLPIN):\s*(.*)/);
+                    const doiMatch = response.match(/Date of Incorporation:\s*(.*)/);
+                    const typeMatch = response.match(/Company Type:\s*(.*)/);
+                    const addressMatch = response.match(/Registered Office Address:\s*([\s\S]*?)(?:Directors|Partners):/);
+                    const directorLabelMatch = response.match(/(Directors|Partners)\s*:/);
+                    const directorMatches = [...response.matchAll(/NAME\s*:\s*(.*?),\s*DESIGNATION\s*:\s*(.*?),\s*DIN\s*:\s*([^\n]+)/g)];
+                    let directors = directorMatches.map(d => ({
+                        name: d[1].trim(),
+                        designation: d[2].trim(),
+                        din: d[3].trim() || "Not Found"
+                    }));
+                    if (directors.length === 0) {
+                        directors = [
+                            { name: "", designation: "", din: "" },
+                            { name: "", designation: "", din: "" }
+                        ];
+                    }
+                    const parsedData = {
+                        companyName: companyNameMatch ? companyNameMatch[1] : '',
+                        companyIDLabel: idMatch ? idMatch[1] : 'ID',
+                        companyID: idMatch ? idMatch[2] : '',
+                        dateOfIncorporation: doiMatch ? doiMatch[1] : '',
+                        companyType: typeMatch ? typeMatch[1] : '',
+                        address: addressMatch ? addressMatch[1].trim() : '',
+                        directors,
+                        directorLabel: directorLabelMatch ? directorLabelMatch[1] : "Directors"
+                    };
+                    
+                    document.getElementById("pasteParseBtn").style.display = "none";
+
+                    // Render HTML for company details
+                    document.getElementById("parsedDetails").innerHTML = `
+                        <h2>Parsed Company Details:</h2>
+                        <div class="editable-row">
+                            <label>Company Name:</label>
+                            <input type="text" id="COMPANY_NAME" class="editable-field" value="${parsedData.companyName || 'Not found'}">
+                        </div>
+                        <div class="editable-row">
+                            <label>${parsedData.companyIDLabel}:</label>
+                            <input type="text" id="COMPANY_ID" class="editable-field" value="${parsedData.companyID || 'Not found'}">
+                        </div>
+                        <div class="editable-row">
+                            <label>Date of Incorporation:</label>
+                            <input type="text" id="DATE_OF_INCORPORATION" class="editable-field" value="${parsedData.dateOfIncorporation || 'Not found'}">
+                        </div>
+                        <div class="editable-row">
+                            <label>Company Type:</label>
+                            <input type="text" id="COMPANY_TYPE" class="editable-field" value="${parsedData.companyType || 'Not found'}">
+                        </div>
+                        <div class="editable-row">
+                            <label>ADDRESS:</label>
+                            <textarea id="ADDRESS" class="editable-field" rows="3">${parsedData.address || 'Not found'}</textarea>
+                        </div>
+                        <div class="editable-row">
+                            <label>Email:</label>
+                            <input type="email" id="EMAIL" class="editable-field" placeholder="Enter email" required>
+                        </div>
+                        <div class="editable-row">
+                            <label>Phone Num:</label>
+                            <input type="text" id="PHONE_1" class="editable-field" placeholder="Enter Phone Num" required>
+                        </div>
+                        <div class="editable-row">
+                            <label>PAN:</label>
+                            <input type="text" id="PAN" class="editable-field" placeholder="Enter PAN" required>
+                        </div>
+                        <div class="editable-row">
+                            <label>TAN:</label>
+                            <input type="text" id="TAN" class="editable-field" placeholder="Enter TAN" required>
+                        </div>
+                        <div class="editable-row">
+                            <label>PLACE:</label>
+                            <input type="text" id="PLACE" class="editable-field" placeholder="eg: Salem" required>
+                        </div>
+                        <div class="editable-row">
+                            <label>DATE:</label>
+                            <input type="text" id="DATE" class="editable-field" placeholder="DD-MM-YYYY" maxlength="10" required>
+                            <input type="text" id="DEED_DATE" class="editable-field" placeholder="06th day of January, 2025" readonly hidden>
+                            <input type="text" id="DAY" class="editable-field" placeholder="Sunday" required hidden>
+                        </div>
+                        <div class="editable-row">
+                            <label>Rupees of Each Share:</label>
+                            <input type="text" id="SHAR-EACH" class="editable-field" placeholder="eg: 100" required>
+                        </div>
+                        
+                        <div class="editable-row">
+                            <label>BANK:</label>
+                            <input type="text" id="BANK" class="editable-field" placeholder="eg: Axis Bank" required>
+                        </div>
+                        <div class="editable-row">
+                            <label>BRANCH:</label>
+                            <input type="text" id="BRANCH" class="editable-field" placeholder="eg: Salem Main" required>
+                        </div>
+                    `;
+
+                    // Render HTML for directors
+                    document.getElementById("directorsSection").innerHTML = `
+                        <div class="fetch-container1">
+                            ${parsedData.directors.map((d, i) => `
+                                <div class="director-box1" style="margin-top: 0px;" data-index="${i+1}">
+                                    <div class="director-header">
+                                        <h4>${parsedData.directorLabel.slice(0, -1)} ${i+1}</h4>
+                                    </div>
+                                    <div class="editable-row">
+                                        <label>NAME:</label>
+                                        <input type="text" id="PERSON_${i+1}" class="editable-field" value="${d.name}" required>
+                                    </div>
+                                    <div class="editable-row">
+                                        <label>Designation:</label>
+                                        <input type="text" id="PERSON_${i+1}_D" class="editable-field" value="${d.designation}">
+                                    </div>
+                                    <div class="editable-row">
+                                        <label>DIN:</label>
+                                        <input type="text" id="PERSON_${i+1}_DIN" class="editable-field" value="${d.din}" required>
+                                    </div>
+                                    <div class="editable-row">
+                                        <label>No.of Equity Shares:</label>
+                                        <input type="text" id="EQUITY_SHARES_${i+1}" class="editable-field" placeholder="eg: 1000" required>
+                                    </div>
+                                    <div class="editable-row">
+                                        <label>Folio No:</label>
+                                        <input type="text" id="FOLIO_${i+1}" class="editable-field" placeholder="eg: 001" required>
+                                    </div>
+                                    <div class="editable-row">
+                                        <label>Certificate No:</label>
+                                        <input type="text" id="CERTI_NO_${i+1}" class="editable-field" placeholder="eg: 001" required>
+                                    </div>
+                                    <div class="editable-row">
+                                        <label>Distinctive No.:</label>
+                                        <input type="text" id="FROM_${i+1}" class="editable-field distinctive-no" placeholder="From" readonly>
+                                        <input type="text" id="TO_${i+1}" class="editable-field distinctive-no" placeholder="To" readonly>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+
+                    // Render HTML for CA-BOX
+                    document.getElementById("CA-BOX").innerHTML = `
+                        <h2>AUDITOR:</h2>
+                        <div class="editable-row">
+                            <label>Firm name:</label>
+                            <input type="text" id="FIRM" class="editable-field" value="T N R AND COMPANY," required>
+                        </div>
+                        <div class="editable-row">
+                            <label>Name:</label>
+                            <input type="text" id="NAME" class="editable-field" value="Mr. CA VIJAYARAJ, F.C.A.," required>
+                        </div>
+                        <div class="editable-row">
+                            <label>Designation:</label>
+                            <input type="text" id="DES" class="editable-field" value="Partner" required>
+                        </div>
+                        <div class="editable-row">
+                            <label>FRN:</label>
+                            <input type="text" id="FRN" class="editable-field" value="016669S" required>
+                        </div>
+                        <div class="editable-row">
+                            <label>MRN:</label>
+                            <input type="text" id="MRN" class="editable-field" value="245110" required>
+                        </div>
+                        <div class="editable-row">
+                            <label>Place:</label>
+                            <input type="text" id="PLACE" class="editable-field" value="Salem" required>
+                        </div>
+                        <div class="editable-row" style="margin-top: 20px;">
+                            <label for="AUDITOR">Generated Auditor Details:</label>
+                            <input type="text" id="AUDITOR" class="editable-field" readonly>
+                        </div>
+                    `;
+
+                    // Now that all the new HTML is on the page, set up the listeners for the new elements
+                    setupEventListeners();
+                    updateDistinctiveNumbers(); // Initial calculation
+                    checkRequiredFields(); // Initial check
+                    updateAuditorField(); // Initial update
+                    
+                    // Add event listeners for all editable fields to enable the convert button
+                    document.querySelectorAll("input, textarea").forEach(field => field.addEventListener("input", checkRequiredFields));
+                    
+                    // Attach click handler to the convert button
+                    const convertButton = document.getElementById("convert");
+                    if (convertButton) {
+                        convertButton.style.display = "block"; // Show the button
+                        convertButton.addEventListener("click", handleConvertClick);
+                    }
+                });
+        }
+        
+        async function handleConvertClick() {
+            const directors = [];
+            document.querySelectorAll(".director-box1").forEach((box, i) => {
+                const idx = i + 1;
+                directors.push({
+                    name: document.getElementById(`PERSON_${idx}`)?.value || "",
+                    designation: document.getElementById(`PERSON_${idx}_D`)?.value || "",
+                    din: document.getElementById(`PERSON_${idx}_DIN`)?.value || "",
+                    equityShares: document.getElementById(`EQUITY_SHARES_${idx}`)?.value || "",
+                    folioNo: document.getElementById(`FOLIO_${idx}`)?.value || "",
+                    certNo: document.getElementById(`CERTI_NO_${idx}`)?.value || "",
+                    From: document.getElementById(`FROM_${idx}`)?.value || "",
+                    To: document.getElementById(`TO_${idx}`)?.value || ""
+                });
+            });
+
+            const replacements = {
+                page: "GST Minutes",
+                COMPANY_NAME: document.getElementById("COMPANY_NAME").value,
+                COMPANY_ID: document.getElementById("COMPANY_ID").value,
+                DATE_OF_INCORPORATION: document.getElementById("DATE_OF_INCORPORATION").value,
+                ADDRESS: document.getElementById("ADDRESS").value,
+                EMAIL: document.getElementById("EMAIL").value,
+                PHONE_1: document.getElementById("PHONE_1").value,
+                PAN: document.getElementById("PAN").value,
+                TAN: document.getElementById("TAN").value,
+                DATE: document.getElementById("DATE").value,
+                SHARE_EACH: document.getElementById("SHAR-EACH").value,
+                PLACE: document.getElementById("PLACE").value,
+                AUDITOR: document.getElementById("AUDITOR").value,
+                directors,
+                DEED_DATE: document.getElementById("DEED_DATE").value,
+                DAY: document.getElementById("DAY").value,
+                BANK: document.getElementById("BANK").value,
+                BRANCH: document.getElementById("BRANCH").value,
+            };
+
+            try {
+                const res = await fetch("/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(replacements)
+                });
+
+                if (!res.ok) {
+                    console.error("Server error:", res.statusText);
+                    return;
+                }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "GST Minutes.docx";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                console.error("Fetch error:", err);
+            }
+        }
+    </script>
+</body>
+</html>

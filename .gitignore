@@ -1,0 +1,9 @@
+# Ignore node dependencies
+node_modules/
+
+# Ignore build outputs
+dist/
+
+# Ignore environment secrets
+.env
+credentials.json

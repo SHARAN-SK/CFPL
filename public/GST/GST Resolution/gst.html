@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GST Registration - Compliance First</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .editable-row {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="background"></div>
+  <a href="#" class="home-btn" onclick="event.preventDefault(); history.back();">← BACK</a>
+  <header>
+    <img src="logo.png" alt="Logo" class="logo"/>
+    <h1 class="company-name">GST Resolution</h1>
+  </header>
+
+  <main>
+    <div id="fetchSection" class="fetch-container">
+      <label for="company">Enter Company Name:</label>
+
+      <input type="text" id="company" placeholder="e.g. Compliance First Pvt. Ltd" />
+      <button onclick="generatePrompt()">Fetch</button>
+
+      <!-- Paste & Parse button directly inside fetchSection -->
+      <button id="pasteParseBtn" onclick="parseResponse()" style="display:none; margin-top:10px;">
+        Paste & Parse
+      </button>
+
+      <div id="parsedDetails" style="margin-top: 0px;"></div>
+    </div>
+  </main>
+
+  <script>
+    function generatePrompt() {
+      const company = document.getElementById("company").value.trim();
+      if (!company) return;
+
+      const prompt = `Fetch based on public sources like MCA Portal, ZaubaCorp, InstaFinancials, The Company Check, and other verified Indian company/LLP databases.
+
+Give ONLY the following EXACT information for the company named "${company}" in the following format:
+
+Company Name: [Company Name]
+[CIN or LLPIN Label]: [CIN or LLPIN]
+Date of Incorporation: [DD Month YYYY]
+Company Type: [Private Limited/LLP/etc]
+Registered Office Address: [Address]
+
+[Directors or Partners Label] :
+NAME: [Name], DESIGNATION: [Designation], DIN: [DIN]
+
+Rules for search and output:
+1. Conduct an EXTREME, deep, and exhaustive search across at least three verified public sources.
+2. Cross-verify all details from a minimum of two sources to confirm accuracy before generating the final output.
+3. The response MUST include all specified fields.
+4. If the company is an LLP, provide the LLPIN. If it is a Private Limited company, provide the CIN. Do not show both. The label should dynamically display as either "CIN:" or "LLPIN:".
+5. The label should dynamically display as either "Directors:" or "Partners:".
+6. All DIN numbers for all directors MUST be fetched and displayed. Do not use placeholders like 'Not Available'. The data will be available in the open sources. If a DIN is genuinely not found after an exhaustive search, explicitly state it for that specific director, but only as a last resort after all other avenues have been exhausted.
+7. The date of incorporation and registered address must be complete and accurate.
+8. Double-check all details one last time before outputting the final result to ensure no information is missing or incorrect.
+`;
+
+      navigator.clipboard.writeText(prompt).then(() => {
+        window.open("https://gemini.google.com/app", "_blank");
+
+        document.querySelector("label[for='company']").style.display = "none";
+        document.getElementById("company").style.display = "none";
+        document.querySelector("#fetchSection button").style.display = "none"; // hides Fetch button
+
+        document.getElementById("pasteParseBtn").style.display = "inline-block"; // show Paste & Parse button
+
+        document.getElementById("fetchSection").scrollIntoView({ behavior: "smooth" });
+      });
+    }
+
+    function parseResponse() {
+      navigator.clipboard.readText()
+        .then((text) => {
+          const response = text;
+          const companyNameMatch = response.match(/Company Name:\s*(.*)/);
+          const idMatch = response.match(/(CIN|LLPIN):\s*(.*)/);
+          const doiMatch = response.match(/Date of Incorporation:\s*(.*)/);
+          const typeMatch = response.match(/Company Type:\s*(.*)/);
+          const addressMatch = response.match(/Registered Office Address:\s*([\s\S]*?)Directors:/);
+
+          const directorMatches = [...response.matchAll(/NAME\s*:\s*(.*?),\s*DESIGNATION\s*:\s*(.*?),\s*DIN\s*:\s*([^\n]+)/g)];
+
+          let directors = directorMatches.map(d => ({
+            name: d[1].trim(),
+            designation: d[2].trim(),
+            din: d[3].trim() || "Not Found"
+          }));
+          if (directors.length === 0) {
+            directors = [
+              { name: "", designation: "", din: "" },
+              { name: "", designation: "", din: "" }
+            ];
+          }
+
+          const parsedData = {
+            companyName: companyNameMatch ? companyNameMatch[1] : '',
+            companyIDLabel: idMatch ? idMatch[1] : 'ID',
+            companyID: idMatch ? idMatch[2] : '',
+            dateOfIncorporation: doiMatch ? doiMatch[1] : '',
+            companyType: typeMatch ? typeMatch[1] : '',
+            address: addressMatch ? addressMatch[1].trim() : '',
+            directors
+          };
+
+
+          document.getElementById("pasteParseBtn").style.display = "none"; // hide Paste & Parse after parsing
+
+          document.getElementById("parsedDetails").innerHTML = `
+          
+            <h2>Parsed Company Details:</h2>
+
+            <div class="editable-row">
+              <label>Company Name:</label>
+              <input type="text" id="COMPANY_NAME" class="editable-field" value="${parsedData.companyName || 'Not found'}">
+            </div>
+
+            <div class="editable-row">
+              <label>${parsedData.companyIDLabel}:</label>
+              <input type="text" id="COMPANY_ID" class="editable-field" value="${parsedData.companyID || 'Not found'}">
+              <input type="text" id="ID_1" class="editable-field" value="${parsedData.companyIDLabel || 'Not found'}" hidden>
+            </div>
+
+            <div class="editable-row">
+              <label>Date of Incorporation:</label>
+              <input type="text" id="DATE_OF_INCORPORATION" class="editable-field" value="${parsedData.dateOfIncorporation || 'Not found'}">
+            </div>
+
+            <div class="editable-row">
+              <label>Company Type:</label>
+              <input type="text" id="COMPANY_TYPE" class="editable-field" value="${parsedData.companyType || 'Not found'}">
+            </div>
+
+            <div class="editable-row">
+              <label>Address:</label>
+              <textarea id="ADDRESS" class="editable-field" rows="3">${parsedData.address || 'Not found'}</textarea>
+            </div>
+
+            <div class="editable-row">
+              <label>Email:</label>
+              <input type="email" id="EMAIL" class="editable-field" placeholder="Enter email" required>
+            </div>
+
+            <div class="editable-row">
+              <label>Phone Num:</label>
+              <input type="text" id="PHONE_1" class="editable-field" placeholder="Enter Phone Num" required>
+            </div>
+
+            <div class="editable-row">
+              <label>Date:</label>
+              <input type="text" id="DATE" class="editable-field" placeholder="DD-MM-YYYY" maxlength="10" required>
+            </div>
+
+            <div class="editable-row">
+              <label>DEED DATE:</label>
+              <input type="text" id="DEED_DATE" class="editable-field" placeholder="06th day of January, 2025" readonly>
+            </div>
+
+            <div class="editable-row">
+              <label>Day:</label>
+              <input type="text" id="DAY" class="editable-field" placeholder="Sunday" required>
+            </div>
+
+            <h3>Directors:</h3>
+            ${parsedData.directors.map((d, i) => `
+              <div class="director-box" data-index="${i}">
+                <div class="editable-row">
+                  <label>Name:</label>
+                  <input type="text" id="PERSON_${i+1}" class="editable-field director-name" value="${d.name}">
+                </div>
+                <div class="editable-row">
+                  <label>Designation:</label>
+                  <input type="text" id="PERSON_${i+1}_D" class="editable-field director-designation" value="${d.designation}">
+                </div>
+                <div class="editable-row">
+                  <label>DIN:</label>
+                  <input type="text" id="PERSON_${i+1}_DIN" class="editable-field director-din" value="${d.din}">
+                </div>
+              </div>
+            `).join('')}
+            <br>
+            <button id="convert" disabled>Convert to Word</button>
+          `;
+function formatDateForDeed(dateString) {
+  const [day, month, year] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+
+  const daySuffix = (d) => {
+    if (d > 3 && d < 21) return 'th';
+    switch (d % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  };
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  return `${date.getDate()}${daySuffix(date.getDate())} day of ${monthNames[date.getMonth()]}, ${date.getFullYear()}`;
+}
+
+document.getElementById('DATE').addEventListener('input', function(e) {
+  let value = e.target.value.replace(/\D/g, ''); // remove non-digits
+
+  // Auto insert dashes
+  if (value.length > 2 && value.length <= 4) {
+    value = value.slice(0, 2) + '-' + value.slice(2);
+  } else if (value.length > 4) {
+    value = value.slice(0, 2) + '-' + value.slice(2, 4) + '-' + value.slice(4, 8);
+  }
+  e.target.value = value;
+
+  let parts = value.split('-');
+  let dayField = document.getElementById('DAY');
+  let deedDateField = document.getElementById('DEED_DATE'); // hidden field
+
+  dayField.value = ''; // reset
+  deedDateField.value = ''; // reset
+  e.target.style.backgroundColor = ''; // reset
+
+  // Validate
+  if (parts.length === 3 && parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
+    let day = parseInt(parts[0], 10);
+    let month = parseInt(parts[1], 10);
+    let year = parseInt(parts[2], 10);
+
+    if (month > 12 || day > 31 || year < 1900 || year > 2100) {
+      e.target.style.backgroundColor = '#66ac4c40'; // invalid
+      return;
+    }
+
+    // Generate Day of Week
+    let dateObj = new Date(year, month - 1, day);
+    if (!isNaN(dateObj)) {
+      let days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      dayField.value = days[dateObj.getDay()];
+
+      // Generate Deed Date format
+      deedDateField.value = formatDateForDeed(value);
+    }
+  }
+});
+
+
+          // Enable convert button only if all required fields are filled
+          const requiredFields = document.querySelectorAll("#parsedDetails [required]");
+          const convert = document.getElementById("convert");
+
+          function checkRequiredFields() {
+            let allFilled = true;
+            requiredFields.forEach(field => {
+              if (!field.value.trim()) {
+                allFilled = false;
+              }
+            });
+            convert.disabled = !allFilled;
+          }
+
+          requiredFields.forEach(field => {
+            field.addEventListener("input", checkRequiredFields);
+          });
+
+          checkRequiredFields();
+
+          convert.addEventListener("click", handleConvertClick);
+        })
+        .catch(() => {
+          // silently fail
+        });
+    }
+
+    async function handleConvertClick() {
+      const directors = [];
+      document.querySelectorAll(".director-box").forEach((box, i) => {
+        const idx = i + 1;
+        const name = document.getElementById(`PERSON_${idx}`)?.value || "";
+        const designation = document.getElementById(`PERSON_${idx}_D`)?.value || "";
+        const din = document.getElementById(`PERSON_${idx}_DIN`)?.value || "";
+        directors.push({ name, designation, din });
+      });
+
+      const replacements = {
+        page: "GST Resolution",
+        COMPANY_NAME: document.getElementById("COMPANY_NAME").value,
+        COMPANY_ID: document.getElementById("COMPANY_ID").value,
+        ID_1: document.getElementById("ID_1").value,
+        DATE_OF_INCORPORATION: document.getElementById("DATE_OF_INCORPORATION").value,
+        COMPANY_TYPE: document.getElementById("COMPANY_TYPE").value,
+        ADDRESS: document.getElementById("ADDRESS").value,
+        EMAIL: document.getElementById("EMAIL").value,
+        PHONE_1: document.getElementById("PHONE_1").value,
+        DATE: document.getElementById("DATE").value,
+        DAY: document.getElementById("DAY").value,
+        DEED_DATE: document.getElementById("DEED_DATE").value,
+        directors
+      };
+
+      try {
+        const res = await fetch("/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(replacements)
+        });
+
+        if (!res.ok) return;
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "GST Resolution.docx";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  </script>
+  
+</body>
+</html>

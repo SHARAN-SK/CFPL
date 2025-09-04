@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Compliance First</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="background"></div>
+  <header>
+    <img src="logo.png" alt="Logo" class="logo"/>
+    <h1 class="company-name">LLP AGEREEMENT</h1>
+  </header>
+  <main>
+    <!-- Main buttons -->
+    <div class="button-container" id="main-buttons" style="display: flex;">
+     <a href="Initial/1.html" class="option-btn">INITIAL</a>
+     <a href="Add/2.html" class="option-btn" id="btn-2" >ADDITION</a>
+     <a href="#" class="option-btn" id="btn-3" >REMOVAL</a>
+
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const mainButtonsDiv = document.getElementById("main-buttons");
+      // No secondary buttons container used now
+      const backBtn = document.getElementById("back-btn");
+
+      // Click listeners for main buttons (do nothing on click now or you can add your logic)
+      mainButtonsDiv.querySelectorAll('a.option-btn[data-main="true"]').forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.preventDefault();
+          // Currently no secondary buttons shown on click
+          // Add your logic here if needed
+        });
+      });
+
+      // Back button behavior - just browser back
+      backBtn.addEventListener("click", e => {
+        e.preventDefault();
+        history.back();
+      });
+    });
+  </script>
+  <a href="#" id="back-btn" class="home-btn">← BACK</a>
+</body>
+</html>
