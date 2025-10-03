@@ -1,409 +1,1309 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GST Registration - Compliance First</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <div class="background"></div>
-  <a href="#" class="home-btn" onclick="event.preventDefault(); history.back();">← BACK</a>
-  <header>
-    <img src="logo.png" alt="Logo" class="logo"/>
-    <h1 class="company-name">Add of LLP AGEREEMENT</h1>
-  </header>
+  <head>
+    <meta charset="UTF-8" />
 
-  <main>
-    <div id="fetchSection" class="fetch-container">
-      <label for="company">Enter Company Name:</label>
-      <input type="text" id="company" placeholder="e.g. Compliance First Pvt. Ltd" />
-      <button onclick="generatePrompt()">Fetch</button>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LLP Agreement - Compliance First</title>
 
-      <!-- Paste & Parse button -->
-      <button id="pasteParseBtn" onclick="parseResponse()" style="display:none; margin-top:10px;">
-        Paste & Parse
-      </button>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* Enhanced Loading Bar */
+    .loading-wrapper { display: none; margin: 10px 0 16px 0; }
+    .loading-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; color: #2e7d32; font-weight: 600; font-size: 13px; letter-spacing: 0.2px; }
+    .loading-track { position: relative; width: 100%; height: 8px; background: rgba(76, 175, 80, 0.15); border-radius: 999px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(46, 125, 50, 0.12); }
+    .loading-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: 999px; background-image: linear-gradient(90deg, #43a047, #66bb6a); box-shadow: 0 0 12px rgba(102, 187, 106, 0.6); transition: width 0.25s ease; }
+    .loading-bar::after { content: ""; position: absolute; inset: 0; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.25) 0, rgba(255,255,255,0.25) 10px, transparent 10px, transparent 20px); background-size: 28px 28px; animation: barberpole 0.9s linear infinite; border-radius: inherit; }
+    @keyframes barberpole { 0% { background-position: 0 0; } 100% { background-position: 28px 0; } }
+      /* Force uppercase for company name fields (to mirror GSTA) */
+      #company,
+      #COMPANY_NAME {
+        text-transform: uppercase;
+      }
+      /* Make readonly fields look consistent with editable fields */
+      .editable-field[readonly] {
+        background-color: #fff;
+        opacity: 1;
+        color: inherit;
+        cursor: default;
+      }
+    </style>
+  </head>
 
-      <div id="parsedDetails" style="margin-top: 0px;"></div>
+  <body>
+    <div class="background"></div>
+    <a
+      href="#"
+      class="home-btn"
+      onclick="event.preventDefault(); history.back();"
+      >← BACK</a
+    >
+    <header>
+      <img src="logo.png" alt="Logo" class="logo" />
+      <h1 class="company-name">Addition LLP AGREEMENT</h1>
+    </header>
+    <main>
+      <div id="fetchSection" class="fetch-container">
+        <div class="input-and-buttons">
+          <label for="company">Enter Company Name:</label>
+          <input
+            type="text"
+            id="company"
+            class="uppercase-input"
+            placeholder="e.g. Compliance First PVT. LTD"
+          />
+          <div class="fetch-buttons-group">
+            <button id="parseBtn1" onclick="parseResponse()">MCA Fetch</button>
+            <button id="parseBtn" onclick="parseResponse()">
+              Falcon Fetch
+            </button>
+          </div>
+        </div>
+        <div id="loadingWrapper" class="loading-wrapper">
+          <div class="loading-header">
+            <span id="loadingLabel">Fetching company data…</span>
+            <span id="loadingPercent">0%</span>
+          </div>
+          <div class="loading-track">
+            <div id="loadingBar" class="loading-bar"></div>
+          </div>
+        </div>
+
+        <div id="parsedDetails" style="margin-top: 0px"></div>
+      </div>
+      <div id="directorsSection"></div>
+    </main>
+    <div id="customAlert" class="custom-alert">
+      <div class="custom-alert-content">
+        <span id="customAlertMsg"></span>
+        <button onclick="closeCustomAlert()">OK</button>
+      </div>
     </div>
 
-    <!-- Directors section OUTSIDE fetch container -->
-    <div id="directorsSection"></div>
-  </main>
+    <script>
+      /** -----------------------
+     * Custom Alert Functions
+     ------------------------*/
+      function showCustomAlert(message) {
+        document.getElementById("customAlertMsg").innerHTML = message;
+        document.getElementById("customAlert").style.display = "flex";
+      }
 
-  <script>
-    function generatePrompt() {
-      const company = document.getElementById("company").value.trim();
-      if (!company) return;
+      function closeCustomAlert() {
+        document.getElementById("customAlert").style.display = "none";
+      }
 
-      const prompt = `Fetch based on public sources like MCA Portal, ZaubaCorp, InstaFinancials, The Company Check, and other verified Indian company/LLP databases.
-
-Give ONLY the following EXACT information for the company named "${company}" in the following format:
-
-Company Name: [Company Name]
-[CIN or LLPIN Label]: [CIN or LLPIN]
-Date of Incorporation: [DD Month YYYY]
-Company Type: [Private Limited/LLP/etc]
-Registered Office Address: [Address]
-
-Directors:
-NAME: [Name], DESIGNATION: [Designation], DIN: [DIN]
-
-Rules for search and output:
-1. Conduct an EXTREME, deep, and exhaustive search across at least three verified public sources.
-2. Cross-verify all details from a minimum of two sources to confirm accuracy before generating the final output.
-3. The response MUST include all specified fields.
-4. If the company is an LLP, provide the LLPIN. If it is a Private Limited company, provide the CIN. Do not show both. The label should dynamically display as either "CIN:" or "LLPIN:".
-5. All DIN numbers for all directors MUST be fetched and displayed. Do not use placeholders like 'Not Available'. The data will be available in the open sources. If a DIN is genuinely not found after an exhaustive search, explicitly state it for that specific director, but only as a last resort after all other avenues have been exhausted.
-6. The date of incorporation and registered address must be complete and accurate.
-7. Double-check all details one last time before outputting the final result to ensure no information is missing or incorrect.
-`;
-
-      navigator.clipboard.writeText(prompt).then(() => {
-        window.open("https://gemini.google.com/app", "_blank");
-        document.querySelector("label[for='company']").style.display = "none";
-        document.getElementById("company").style.display = "none";
-        document.querySelector("#fetchSection button").style.display = "none";
-        document.getElementById("pasteParseBtn").style.display = "inline-block";
-        document.getElementById("fetchSection").scrollIntoView({ behavior: "smooth" });
-      });
-    }
-
-    function parseResponse() {
-      navigator.clipboard.readText()
-        .then((text) => {
-          const response = text;
-          const companyNameMatch = response.match(/Company Name:\s*(.*)/);
-          const idMatch = response.match(/(CIN|LLPIN):\s*(.*)/);
-          const doiMatch = response.match(/Date of Incorporation:\s*(.*)/);
-          const typeMatch = response.match(/Company Type:\s*(.*)/);
-          const addressMatch = response.match(/Registered Office Address:\s*([\s\S]*?)Directors:/);
-
-          // FIX: Allow DIN to be "Not Found" or text, not only digits
-          const directorMatches = [...response.matchAll(/NAME\s*:\s*(.*?),\s*DESIGNATION\s*:\s*(.*?),\s*DIN\s*:\s*([^\n]+)/g)];
-
-          let directors = directorMatches.map(d => ({
-            name: d[1].trim(),
-            designation: d[2].trim(),
-            din: d[3].trim() || "Not Found"
-          }));
-          if (directors.length === 0) {
-            directors = [
-              { name: "", designation: "", din: "" },
-              { name: "", designation: "", din: "" }
-            ];
-          }
-          directors.push({ name: "", designation: "", din: "" });
-
-          const parsedData = {
-            companyName: companyNameMatch ? companyNameMatch[1] : '',
-            companyIDLabel: idMatch ? idMatch[1] : 'ID',
-            companyID: idMatch ? idMatch[2] : '',
-            dateOfIncorporation: doiMatch ? doiMatch[1] : '',
-            companyType: typeMatch ? typeMatch[1] : '',
-            address: addressMatch ? addressMatch[1].trim() : '',
-            directors
+      // Auto-uppercase utility for inputs with class 'uppercase-input'
+      function addUppercaseListeners(root = document) {
+        const fields = root.querySelectorAll(".uppercase-input");
+        fields.forEach((field) => {
+          const toUpper = () => {
+            if (typeof field.value === "string") field.value = field.value.toUpperCase();
           };
+          field.removeEventListener("input", toUpper);
+          field.addEventListener("input", toUpper);
+          field.removeEventListener("blur", toUpper);
+          field.addEventListener("blur", toUpper);
+        });
+      }
 
-          document.getElementById("pasteParseBtn").style.display = "none";
+      // PAN and DIN validation helpers
+      function validatePAN(inputEl) {
+        if (!inputEl) return;
+        const raw = (inputEl.value || "").toUpperCase().replace(/\s/g, "");
+        inputEl.value = raw;
+        const isValid = /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(raw);
+        inputEl.style.backgroundColor = isValid || !raw ? "" : "#ff000014";
+        inputEl.title = isValid || !raw ? "" : "PAN should be 5 letters, 4 digits, 1 letter";
+        return isValid;
+      }
+      function validateDIN(inputEl) {
+        if (!inputEl) return;
+        const raw = (inputEl.value || "").replace(/\D/g, "");
+        inputEl.value = raw;
+        const isValid = /^\d{8}$/.test(raw);
+        inputEl.style.backgroundColor = isValid || !raw ? "" : "#ff000014";
+        inputEl.title = isValid || !raw ? "" : "DIN should be 8 digits";
+        return isValid;
+      }
 
-          // === Company details (WITHOUT directors) ===
-          document.getElementById("parsedDetails").innerHTML = `
-            <h2>Parsed Company Details:</h2>
+      // Number-to-words conversion function for Indian numbering system
+      function convertToWords(num) {
+        if (typeof num !== "number" || isNaN(num)) {
+          return "Invalid number";
+        }
 
-            <div class="editable-row">
-              <label>Company Name:</label>
-              <input type="text" id="COMPANY_NAME" class="editable-field" value="${parsedData.companyName || 'Not found'}">
-            </div>
+        const a = [
+          "",
+          "one ",
+          "two ",
+          "three ",
+          "four ",
+          "five ",
+          "six ",
+          "seven ",
+          "eight ",
+          "nine ",
+          "ten ",
+          "eleven ",
+          "twelve ",
+          "thirteen ",
+          "fourteen ",
+          "fifteen ",
+          "sixteen ",
+          "seventeen ",
+          "eighteen ",
+          "nineteen ",
+        ];
+        const b = [
+          "",
+          "",
+          "twenty",
+          "thirty",
+          "forty",
+          "fifty",
+          "sixty",
+          "seventy",
+          "eighty",
+          "ninety",
+        ];
+        const n = ("000000000" + num.toFixed(0))
+          .substr(-9)
+          .match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
 
-            <div class="editable-row">
-              <label>${parsedData.companyIDLabel}:</label>
-              <input type="text" id="COMPANY_ID" class="editable-field" value="${parsedData.companyID || 'Not found'}">
-            </div>
+        if (!n || num === 0) return "zero rupees only";
 
-            <div class="editable-row">
-              <label>Date of Incorporation:</label>
-              <input type="text" id="DATE_OF_INCORPORATION" class="editable-field" value="${parsedData.dateOfIncorporation || 'Not found'}">
-            </div>
+        let str = "";
+        str +=
+          Number(n[1]) != 0
+            ? (a[Number(n[1])] || b[n[1][0]] + " " + a[n[1][1]]) + "crore "
+            : "";
+        str +=
+          Number(n[2]) != 0
+            ? (a[Number(n[2])] || b[n[2][0]] + " " + a[n[2][1]]) + "lakh "
+            : "";
+        str +=
+          Number(n[3]) != 0
+            ? (a[Number(n[3])] || b[n[3][0]] + " " + a[n[3][1]]) + "thousand "
+            : "";
+        str +=
+          Number(n[4]) != 0
+            ? (a[Number(n[4])] || b[n[4][0]] + " " + a[n[4][1]]) + "hundred "
+            : "";
+        str +=
+          Number(n[5]) != 0
+            ? (str != "" ? "and " : "") +
+              (a[Number(n[5])] || b[n[5][0]] + " " + a[n[5][1]])
+            : "";
 
-            <div class="editable-row">
-              <label>COMPANY TYPE:</label>
-              <input type="text" id="COMPANY_TYPE" class="editable-field" value="${parsedData.companyType || 'Not found'}">
-            </div>
+        return str.trim().replace(/\s+/g, " ") + " rupees only";
+      }
 
-            <div class="editable-row">
-              <label>ADDRESS:</label>
-              <textarea id="ADDRESS" class="editable-field" rows="3">${parsedData.address || 'Not found'}</textarea>
-            </div>
+      // Helper to format number with Indian commas (1,00,000)
+      function formatIndianCommas(numStr) {
+        const num = String(numStr).replace(/[^\d.]/g, "");
+        if (!num) return "";
 
-            <div class="editable-row">
-              <label>NATURE OF BUSINESS:</label>
-              <textarea id="BUSINESS_TYPE" class="editable-field" rows="3" placeholder="Describe the business activities" ></textarea>
-            </div>
+        const parts = num.split(".");
+        let integerPart = parts[0];
+        const decimalPart = parts.length > 1 ? "." + parts[1] : "";
 
-            <div class="editable-row">
-              <label>PLACE:</label>
-              <input type="text" id="PLACE" class="editable-field" placeholder="Location where the agreement is made" required>
-            </div>
+        if (integerPart.length > 3) {
+          let lastThree = integerPart.substring(integerPart.length - 3);
+          let otherNumbers = integerPart.substring(0, integerPart.length - 3);
+          integerPart =
+            otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") +
+            "," +
+            lastThree;
+        }
+        return integerPart + decimalPart;
+      }
 
-            <div class="editable-row">
-              <label>DEED DATE:</label>
-              <input type="text" id="DATE" class="editable-field" placeholder="DD-MM-YYYY" maxlength="10" required>
-            </div>
+      // UPDATED: also fills TOTAL_RUPEES_WORDS live
+      function updateCalculatedPercentages() {
+        let totalRupees = 0;
+        const partners = document.querySelectorAll(".director-box1");
+        const totalWordsEl = document.getElementById("TOTAL_RUPEES_WORDS");
 
-            <div class="editable-row">
-              <label>Partners Designations:</label>
-              <select id="PARTNER" class="editable-field" required></select>
-            </div>
+        // Calculate total rupees from all partners
+        partners.forEach((box) => {
+          const index = box.getAttribute("data-index");
+          const rsField = document.getElementById(`SHARE-Rs_${index}`);
+          const raw = rsField && rsField.value ? rsField.value : "";
+          const value = parseFloat(raw.replace(/[^\d.]/g, "")) || 0;
+          totalRupees += value;
+        });
 
-            <div class="editable-row">
-              <input type="text" id="DEED_DATE" class="editable-field" placeholder="06th day of January, 2025" readonly hidden>
-            </div>
+        // Update each partner's calculated percentage
+        partners.forEach((box) => {
+          const index = box.getAttribute("data-index");
+          const rsField = document.getElementById(`SHARE-Rs_${index}`);
+          const calculatedPctField = document.getElementById(
+            `CALCULATED_SHARE-%_${index}`
+          );
+          if (!calculatedPctField) return;
 
-            <div class="editable-row">
-              <input type="text" id="DAY" class="editable-field" required hidden>
-            </div>
-          `;
+          const raw = rsField && rsField.value ? rsField.value : "";
+          const value = parseFloat(raw.replace(/[^\d.]/g, "")) || 0;
 
-          // === Directors moved to a separate section ===
-          document.getElementById("directorsSection").innerHTML = `
-  <div class="fetch-container1">
-    ${parsedData.directors.map((d, i) => `
-      <div class="director-box1" style="margin-top: 0px;" data-index="${i+1}">
-        
-        <h4>
-          ${d.name ? `Partner ${i+1}` : 'To be Added as Partner'}
-        </h4>
+          if (totalRupees > 0) {
+            const percentage = (value / totalRupees) * 100;
+            calculatedPctField.value = `${percentage.toFixed(2)}%`;
+          } else {
+            calculatedPctField.value = "0.00%";
+          }
+        });
 
-        <div class="editable-row">
-          <label>NAME:</label>
-          <input type="text" id="PERSON_${i+1}" class="editable-field" value="${d.name}">
-        </div>
-        <div class="editable-row">
-          <label>Designation:</label>
-          <input type="text" id="PERSON_${i+1}_D" class="editable-field" value="${d.designation}">
-        </div>
-        <div class="editable-row">
-          <label>DIN:</label>
-          <input type="text" id="PERSON_${i+1}_DIN" class="editable-field" value="${d.din}">
-        </div>
-        <div class="editable-row">
-          <label>S/o(Son of):</label>
-          <input type="text" id="FATHER_${i+1}" placeholder="Father Name" class="editable-field" required>
-        </div>
-        <div class="editable-row">
-          <label>PAN:</label>
-          <input type="text" id="PAN_${i+1}" placeholder="eg:AAAPA1234A" class="editable-field" required>
-        </div>
-        <div class="editable-row">
-          <label>Residing Address:</label>
-          <textarea id="ADDRESS_${i+1}" class="editable-field" rows="3" placeholder="Residing Address of the Partner" ></textarea>
-        </div>
-        <div class="editable-row">
-          <label>SHARE Rs:</label>
-          <input type="text" id="SHARE-Rs_${i+1}" placeholder="eg.10,000" class="editable-field" required>
-        </div>
-        <div class="editable-row">
-          <label>Profit/Loss Ratio:</label>
-          <input type="text" id="SHARE-%_${i+1}" placeholder="25%" class="editable-field" required>
-        </div>
-      </div>
-    `).join('')}
-  </div>
-  
-  <div class="button-center">
-    <button id="convert" disabled>Convert to Word</button>
-  </div>
-`;
+        // NEW: live-fill total rupees in words
+        if (totalWordsEl) {
+          totalWordsEl.value =
+            totalRupees > 0 ? convertToWords(Math.round(totalRupees)) : "";
+        }
+        // Update partner dropdown options
+        updatePartnerDropdown();
+      }
 
-  // ✅ Example partner count (this should come dynamically from your logic)
-  let partnerCount = directors.length;  
-  const optionsMap = {
-    3: [
-      { value: "done", text: "2 Designated Partners" }
-    ],
-    4: [
-      { value: "", text: "Select" },
-      { value: "done", text: "3 Designated Partners" },
-      { value: "not done", text: "2 Designated Partners and 1 Partner" }
-    ],
-    5: [
-      { value: "", text: "Select" },
-      { value: "done", text: "4 Designated Partners" },
-      { value: "not done", text: "3 Designated Partners and 1 Partner" },
-      { value: "maybe", text: "2 Designated Partners and 2 Partner" }
-    ]
-  };
+      // New function to fetch and combine business descriptions
+      async function fetchAndCombineDescriptions() {
+        const fetchBtn = document.getElementById("fetchBusinessDescriptionBtn");
+        const businessNatureInputs = document.querySelectorAll(
+          ".business-nature-field"
+        );
+        const outputTextarea = document.getElementById("BUSINESS_TYPE");
 
-  // ✅ Function to populate dropdown dynamically
-  function populateDropdown(id, count) {
-    let select = document.getElementById(id);
-    select.innerHTML = ""; // clear previous options
+        let hasInput = false;
+        let keywords = [];
+        businessNatureInputs.forEach((input) => {
+          if (input.value.trim()) {
+            hasInput = true;
+            keywords.push(input.value.trim());
+          }
+        });
 
-    if (optionsMap[count]) {  // check if partnerCount exists in optionsMap
-      optionsMap[count].forEach(opt => {
-        let option = document.createElement("option");
-        option.value = opt.value;
-        option.textContent = opt.text;
-        select.appendChild(option);
-      });
-    }
-  }
-  // ✅ Apply function to your dropdown
-  populateDropdown("PARTNER", partnerCount);
+        if (keywords.length === 0) {
+          showCustomAlert(
+            "⚠️ Please enter at least one business nature keyword."
+          );
+          return;
+        }
 
+        fetchBtn.textContent = "Fetching...";
+        fetchBtn.disabled = true;
+        outputTextarea.value = "";
 
-
-          // === FIX: Auto format Rs and % ===
-          parsedData.directors.forEach((_, i) => {
-            const rsField = document.getElementById(`SHARE-Rs_${i+1}`);
-            const pctField = document.getElementById(`SHARE-%_${i+1}`);
-
-            if (rsField) {
-              rsField.addEventListener("input", function (e) {
-                let value = e.target.value.replace(/,/g, "").replace(/[^\d]/g, "");
-                e.target.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-              });
-            }
-
-            if (pctField) {
-              pctField.addEventListener("input", function () {
-                let value = this.value.replace(/[^0-9.]/g, "");
-                this.value = value ? value + "%" : "";
-              });
-            }
+        try {
+          // NOTE: This API call is assumed to be working on the backend
+          const response = await fetch("/api/fetch-combined-description", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ businessNatures: keywords }),
           });
 
-          // === DATE & DEED DATE SCRIPT stays same ===
-          function formatDateForDeed(dateString) {
-            const [day, month, year] = dateString.split('-').map(Number);
-            const date = new Date(year, month - 1, day);
-            const daySuffix = (d) => {
-              if (d > 3 && d < 21) return 'th';
-              switch (d % 10) {
-                case 1: return 'st';
-                case 2: return 'nd';
-                case 3: return 'rd';
-                default: return 'th';
-              }
-            };
-            const monthNames = [
-              "January", "February", "March", "April", "May", "June",
-              "July", "August", "September", "October", "November", "December"
-            ];
-            return `${date.getDate()}${daySuffix(date.getDate())} day of ${monthNames[date.getMonth()]}, ${date.getFullYear()}`;
+          if (!response.ok) {
+            throw new Error(
+              `Server error: ${response.status} ${response.statusText}`
+            );
           }
 
-          document.getElementById('DATE').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 2 && value.length <= 4) {
-              value = value.slice(0, 2) + '-' + value.slice(2);
-            } else if (value.length > 4) {
-              value = value.slice(0, 2) + '-' + value.slice(2, 4) + '-' + value.slice(4, 8);
-            }
-            e.target.value = value;
+          const data = await response.json();
+          let finalDescription = "";
 
-            let parts = value.split('-');
-            let dayField = document.getElementById('DAY');
-            let deedDateField = document.getElementById('DEED_DATE');
+          if (data.description && data.description.trim()) {
+            const descriptions = data.description
+              .trim()
+              .split(".")
+              .filter((s) => s.trim());
+            const numberedDescription = descriptions
+              .map(
+                (desc, i) => `9.${i + 1} ${desc.trim().replace(/[.]$/, "")}.`
+              )
+              .join(" ");
 
-            dayField.value = '';
-            deedDateField.value = '';
-            e.target.style.backgroundColor = '';
+            outputTextarea.value = numberedDescription;
+            showCustomAlert(
+              "✅ Business descriptions fetched and combined successfully!"
+            );
+          } else {
+            const fallbackDescription = keywords
+              .map(
+                (k, i) =>
+                  `9.${i + 1} The company is engaged in ${k
+                    .toLowerCase()
+                    .trim()
+                    .replace(/[.]$/, "")}.`
+              )
+              .join(" ");
+            outputTextarea.value = fallbackDescription;
+            showCustomAlert(
+              "ℹ️ No detailed description found. Using a fallback."
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching business descriptions:", error);
+          showCustomAlert(
+            "❌ Failed to fetch business descriptions. Please try again."
+          );
+        } finally {
+          fetchBtn.textContent = "Fetch";
+          fetchBtn.disabled = false;
+        }
+        checkRequiredFields();
+      }
 
-            if (parts.length === 3 && parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
-              let day = parseInt(parts[0], 10);
-              let month = parseInt(parts[1], 10);
-              let year = parseInt(parts[2], 10);
+      function handleNatureCountChange() {
+        const count = document.getElementById("natureCount").value;
+        const container = document.getElementById(
+          "businessNatureInputsContainer"
+        );
+        container.innerHTML = "";
+        for (let i = 1; i <= count; i++) {
+          container.innerHTML += `
+          <div class="editable-row">
+            <label>Business Nature ${i}:</label>
+            <input type="text" id="BUSINESS_NATURE_${i}" class="editable-field business-nature-field" placeholder="e.g., software development" required>
+          </div>
+        `;
+        }
+        // Re-attach listeners for checking required fields on new inputs
+        document
+          .querySelectorAll(".business-nature-field")
+          .forEach((field) =>
+            field.addEventListener("input", checkRequiredFields)
+          );
+        checkRequiredFields();
+      }
 
-              if (month > 12 || day > 31 || year < 1900 || year > 2100) {
-                e.target.style.backgroundColor = '#66ac4c40';
-                return;
-              }
+      // Helper to format date for deed: 06-01-2025 -> 6th day of January, 2025
+      function formatDateForDeed(dateString) {
+        const parts = dateString.split("-");
+        if (parts.length !== 3) return "";
 
-              let dateObj = new Date(year, month - 1, day);
-              if (!isNaN(dateObj)) {
-                let days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                dayField.value = days[dateObj.getDay()];
-                deedDateField.value = formatDateForDeed(value);
-              }
-            }
-          });
+        const [dayStr, monthStr, yearStr] = parts;
+        const day = parseInt(dayStr, 10);
+        const month = parseInt(monthStr, 10);
+        const year = parseInt(yearStr, 10);
 
-          // Enable convert only if all required fields are filled
-          const requiredFields = document.querySelectorAll("#parsedDetails [required]");
-          const convert = document.getElementById("convert");
+        // Basic validation
+        if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1000)
+          return "";
 
-          function checkRequiredFields() {
-            let allFilled = true;
-            requiredFields.forEach(field => {
-              if (!field.value.trim()) {
+        const date = new Date(year, month - 1, day);
+
+        // Check for invalid date components (e.g., 31-04-2025)
+        if (
+          date.getFullYear() !== year ||
+          date.getMonth() !== month - 1 ||
+          date.getDate() !== day
+        )
+          return "";
+
+        const daySuffix = (d) => {
+          if (d > 3 && d < 21) return "th";
+          switch (d % 10) {
+            case 1:
+              return "st";
+            case 2:
+              return "nd";
+            case 3:
+              return "rd";
+            default:
+              return "th";
+          }
+        };
+        const monthNames = [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ];
+        return `${day}${daySuffix(day)} day of ${
+          monthNames[date.getMonth()]
+        }, ${year}`;
+      }
+
+      // Check all required fields and enable/disable the 'Convert' button
+      function checkRequiredFields() {
+        const convert = document.getElementById("convert");
+        const requiredFields = document.querySelectorAll(
+          "#parsedDetails [required], #directorsSection [required], #PARTNER, .business-nature-field[required]"
+        );
+
+        let allFilled = true;
+        requiredFields.forEach((field) => {
+          const value = field.value.trim();
+          if (field.type === "select-one") {
+            // Special handling for the partner select dropdown
+            if (field.id === "PARTNER") {
+              const partnerCount =
+                document.querySelectorAll(".director-box1").length;
+              const hasOptions =
+                document.getElementById("PARTNER").options.length > 0;
+              // Require selection if there are partners
+              if (
+                partnerCount > 0 &&
+                (!hasOptions ||
+                  value === "" ||
+                  field.options[field.selectedIndex].text === "Select")
+              ) {
                 allFilled = false;
               }
+            } else if (
+              value === "" ||
+              field.options[field.selectedIndex].text === "Select"
+            ) {
+              allFilled = false;
+            }
+          } else if (!value) {
+            allFilled = false;
+          }
+        });
+        if (convert) convert.disabled = !allFilled;
+      }
+
+      // Function to generate the HTML for a single partner box
+      function createPartnerBoxHTML(data = {}, index) {
+        return `
+            <div class="director-box1" style="margin-top: 10px;" data-index="${index}">
+                <div class="box-header">
+                    <h4>Partner ${index}</h4>
+                    <button class="remove-btn" onclick="removePartnerField(${index})">Remove</button>
+                </div>
+                <div class="editable-row">
+                    <label>NAME:</label>
+                    <input type="text" id="PERSON_${index}" class="editable-field uppercase-input" value="${
+          data.Name || ""
+        }" required>
+                </div>
+                <div class="editable-row">
+                    <label>Designation:</label>
+                    <input type="text" id="PERSON_${index}_D" class="editable-field" placeholder="Partner" value="${
+          data.Designation || "Partner"
+        }">
+                </div>
+                <div class="editable-row">
+                    <label>DIN:</label>
+                    <input type="text" id="PERSON_${index}_DIN" class="editable-field" value="${
+          data.DIN || ""
+        }">
+                </div>
+                <div class="editable-row">
+                    <label>S/o(Son of):</label>
+                    <input type="text" id="FATHER_${index}" placeholder="Father Name" class="editable-field" required>
+                </div>
+                <div class="editable-row">
+                    <label>PAN:</label>
+                    <input type="text" id="PAN_${index}" placeholder="eg:AAAPA1234A" class="editable-field" required>
+                </div>
+                <div class="editable-row">
+                    <label>Residing Address:</label>
+                    <textarea id="ADDRESS_${index}" class="editable-field" rows="3" placeholder="Residing Address of the Partner" required>${
+          data.Address || ""
+        }</textarea>
+                </div>
+                <div class="editable-row">
+                    <label>SHARE Rs:</label>
+                    <input type="text" id="SHARE-Rs_${index}" placeholder="eg.10,000" class="editable-field share-rs-field" required>
+                </div>
+                <div class="editable-row">
+                    <label>Profit/Loss Ratio:</label>
+                    <input type="text" id="SHARE-%_${index}" placeholder="25%" class="editable-field share-pct-field" required>
+                </div>
+                <div class="editable-row">
+                    <label>Contribution %:</label>
+                    <input type="text" id="CALCULATED_SHARE-%_${index}" class="editable-field" readonly>
+                </div>
+            </div>
+        `;
+      }
+
+      // Function to attach event listeners to a newly created partner box
+      function attachPartnerFieldListeners(index) {
+        const rsField = document.getElementById(`SHARE-Rs_${index}`);
+        const pctField = document.getElementById(`SHARE-%_${index}`);
+        const panField = document.getElementById(`PAN_${index}`);
+        const dinField = document.getElementById(`PERSON_${index}_DIN`);
+        const allFields = document.querySelectorAll(
+          `.director-box1[data-index="${index}"] input, .director-box1[data-index="${index}"] textarea`
+        );
+
+        // Attach required field checking to all input fields
+        allFields.forEach((field) => {
+          field.addEventListener("input", checkRequiredFields);
+          if (field.id === `PERSON_${index}`) {
+            field.addEventListener("input", function () {
+              this.value = this.value.toUpperCase();
+              updateDesignatedPartnerNames();
             });
-            convert.disabled = !allFilled;
+          }
+        });
+
+        // Share Rs. Field listeners
+        if (rsField) {
+          rsField.addEventListener("input", function (e) {
+            // Allows digits, commas, periods (commas will be removed on focus/re-added on blur)
+            e.target.value = e.target.value.replace(/[^\d.,]/g, "");
+            updateCalculatedPercentages();
+            checkRequiredFields();
+          });
+          rsField.addEventListener("blur", function (e) {
+            const cleanValue = e.target.value.replace(/[^\d.]/g, "");
+            e.target.value = formatIndianCommas(cleanValue);
+          });
+          rsField.addEventListener("focus", function (e) {
+            e.target.value = e.target.value.replace(/[^\d.]/g, "");
+          });
+        }
+
+        // Profit/Loss % Field listeners
+        if (pctField) {
+          pctField.addEventListener("input", function () {
+            let value = this.value.replace(/[^0-9.]/g, "");
+            let num = parseFloat(value);
+            if (!isNaN(num)) {
+              if (num < 0) num = 0;
+              if (num > 100) num = 100;
+              this.value = num.toString() + "%";
+            } else {
+              this.value = "";
+            }
+            checkRequiredFields();
+          });
+          pctField.addEventListener("focus", function () {
+            this.value = this.value.replace(/[^0-9.]/g, "");
+          });
+          pctField.addEventListener("blur", function () {
+            let value = this.value.replace(/[^0-9.]/g, "");
+            let num = parseFloat(value);
+            if (!isNaN(num)) {
+              if (num < 0) num = 0;
+              if (num > 100) num = 100;
+              this.value = num.toString() + "%";
+            } else {
+              this.value = "";
+            }
+          });
+        }
+
+        // PAN validation listeners
+        if (panField) {
+          panField.addEventListener("input", function () {
+            this.value = this.value.toUpperCase();
+            validatePAN(this);
+          });
+          panField.addEventListener("blur", function () {
+            validatePAN(this);
+          });
+        }
+
+        // DIN validation listeners
+        if (dinField) {
+          dinField.addEventListener("input", function () {
+            this.value = this.value.replace(/\D/g, "");
+            validateDIN(this);
+          });
+          dinField.addEventListener("blur", function () {
+            validateDIN(this);
+          });
+        }
+      }
+
+      // Compose designated partner names based on selection and current partner names
+      function updateDesignatedPartnerNames() {
+        const select = document.getElementById("PARTNER");
+        const row = document.getElementById("dpNamesRow");
+        const output = document.getElementById("DP");
+        if (!select || !row || !output) return;
+
+        const selectedOption = select.options[select.selectedIndex];
+        const dpCountAttr = selectedOption?.getAttribute("data-dpcount");
+        const dpCount = dpCountAttr ? parseInt(dpCountAttr, 10) : 0;
+
+        if (!dpCount || isNaN(dpCount)) {
+          row.style.display = "none";
+          output.value = "";
+          return;
+        }
+
+        const names = [];
+        for (let i = 1; i <= dpCount; i++) {
+          const name = document.getElementById(`PERSON_${i}`)?.value.trim();
+          if (name) names.push(name);
+        }
+
+        let joined = "";
+        if (names.length === 1) joined = names[0];
+        else if (names.length === 2) joined = `${names[0]} and ${names[1]}`;
+        else if (names.length > 2)
+          joined = `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+
+        if (joined && joined.trim()) {
+          row.style.display = "block";
+          output.value = joined.toUpperCase();
+        } else {
+          row.style.display = "none";
+          output.value = "";
+        }
+      }
+
+      /** -----------------------
+       * Partner Management Functions
+       * ------------------------*/
+
+      // Helper to get the next available index
+      function getNextPartnerIndex() {
+        const boxes = document.querySelectorAll(".director-box1");
+        let maxIndex = 0;
+        boxes.forEach((box) => {
+          const index = parseInt(box.getAttribute("data-index"));
+          if (index > maxIndex) maxIndex = index;
+        });
+        return maxIndex + 1;
+      }
+
+      // Add new partner field
+      function addPartnerField() {
+        const container = document.getElementById("directorFieldsContainer");
+        const newIndex = getNextPartnerIndex();
+
+        // Use a temporary div to convert HTML string to an element
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = createPartnerBoxHTML({}, newIndex).trim();
+        const newBox = tempDiv.firstChild;
+
+        // Append the new box to the container
+        container.appendChild(newBox);
+
+        // Attach listeners and run checks
+        attachPartnerFieldListeners(newIndex);
+        updateCalculatedPercentages();
+        updatePartnerDropdown();
+        checkRequiredFields();
+        // Removed partner added alert per requirement
+      }
+
+      // Remove partner field
+      function removePartnerField(index) {
+        const container = document.getElementById("directorFieldsContainer");
+        const boxToRemove = document.querySelector(
+          `.director-box1[data-index="${index}"]`
+        );
+
+        if (boxToRemove) {
+          // Prevent removing the last two partners (LLP minimum)
+          if (container.querySelectorAll(".director-box1").length <= 2) {
+            showCustomAlert(
+              "⚠️ An LLP requires a minimum of two partners. Cannot remove this partner."
+            );
+            return;
           }
 
-          requiredFields.forEach(field => field.addEventListener("input", checkRequiredFields));
+          boxToRemove.remove();
+
+          // Re-index all remaining boxes and update IDs/data-index
+          reIndexPartnerFields();
+          updateCalculatedPercentages(); // Recalculate shares and dropdown
+          updateDesignatedPartnerNames();
+          updatePartnerDropdown();
+          checkRequiredFields();
+          // Removed partner removed alert per requirement
+        }
+      }
+
+      // Re-index partners after a removal to keep the sequence clean
+      function reIndexPartnerFields() {
+        const boxes = document.querySelectorAll(".director-box1");
+        boxes.forEach((box, i) => {
+          const oldIndex = box.getAttribute("data-index");
+          const newIndex = i + 1;
+
+          if (oldIndex != newIndex) {
+            box.setAttribute("data-index", newIndex);
+            box.querySelector("h4").textContent = `Partner ${newIndex}`;
+
+            // Get all elements within the box that have an ID containing the old index
+            const elementsWithOldId = box.querySelectorAll(
+              `[id*='_${oldIndex}']`
+            );
+            elementsWithOldId.forEach((el) => {
+              // This replaces the old index at the end of the ID string (preceded by '_')
+              el.id = el.id.replace(
+                new RegExp(`_${oldIndex}$`),
+                `_${newIndex}`
+              );
+            });
+
+            // Update the onclick in the remove button
+            const removeBtn = box.querySelector(".remove-btn");
+            removeBtn.setAttribute(
+              "onclick",
+              `removePartnerField(${newIndex})`
+            );
+
+            // Re-attach listeners as the element IDs have changed
+            attachPartnerFieldListeners(newIndex);
+          }
+        });
+      }
+
+      // Function to populate the Designated Partners dropdown
+      function updatePartnerDropdown() {
+        const partnerCount = document.querySelectorAll(".director-box1").length;
+        const select = document.getElementById("PARTNER");
+        if (!select) return;
+
+        const previousValue = select.value;
+        select.innerHTML = "";
+
+        let options = [{ value: "", text: "Select", dpCount: 0 }];
+
+        if (partnerCount === 2) {
+          // Special case: exactly two partners → only one clear option
+          let twoDP_Value = `1 and 2 are designated as “Designated Partners” and partners 1 to ${partnerCount} are collectively referred as the Partners`;
+          options.push({ value: twoDP_Value, text: `2 Designated Partners`, dpCount: 2 });
+        } else {
+          if (partnerCount >= 2) {
+            // Option: All Partners are Designated Partners
+            let allDP_Value = `1 to ${partnerCount} are designated as “Designated Partners” and partners 1 to ${partnerCount} are collectively referred as the Partners`;
+            options.push({
+              value: allDP_Value,
+              text: `${partnerCount} Designated Partners`,
+              dpCount: partnerCount,
+            });
+          }
+
+          if (partnerCount > 2) {
+            // Option: All but one are Designated Partners
+            let allButOneDP_Value = `1 to ${
+              partnerCount - 1
+            } are designated as “Designated Partners” and partners 1 to ${partnerCount} are collectively referred as the Partners`;
+            options.push({
+              value: allButOneDP_Value,
+              text: `${partnerCount - 1} Designated Partners and 1 Partner`,
+              dpCount: partnerCount - 1,
+            });
+          }
+
+          if (partnerCount >= 2) {
+            // Option: Two Designated Partners (minimum)
+            let twoDP_Value = `1 and 2 are designated as “Designated Partners” and partners 1 to ${partnerCount} are collectively referred as the Partners`;
+            let partnerLabel = partnerCount - 2 === 1 ? "Partner" : "Partner(s)";
+            options.push({
+              value: twoDP_Value,
+              text: `2 Designated Partners and ${partnerCount - 2} ${partnerLabel}`,
+              dpCount: 2,
+            });
+          }
+        }
+
+        // Filter unique options by value and display text to avoid duplicates
+        const existingValues = new Set();
+        const existingTexts = new Set();
+        const uniqueOptions = options.filter((opt) => {
+          const normalizedText = String(opt.text || "").trim();
+          if (existingValues.has(opt.value) || existingTexts.has(normalizedText)) {
+            return false;
+          }
+          existingValues.add(opt.value);
+          existingTexts.add(normalizedText);
+          return true;
+        });
+
+        uniqueOptions.forEach((opt) => {
+          let option = document.createElement("option");
+          option.value = opt.value;
+          option.textContent = opt.text;
+          if (typeof opt.dpCount === "number") {
+            option.setAttribute("data-dpcount", String(opt.dpCount));
+          }
+          select.appendChild(option);
+        });
+        // Try to preserve previous selection if still valid
+        if ([...select.options].some((o) => o.value === previousValue)) {
+          select.value = previousValue;
+        }
+        // If exactly two partners, auto-select the "2 Designated Partners" option
+        if (partnerCount === 2) {
+          const twoOpt = [...select.options].find((o) => o.getAttribute("data-dpcount") === "2");
+          if (twoOpt) select.value = twoOpt.value;
+        }
+        updateDesignatedPartnerNames();
+        checkRequiredFields();
+      }
+
+      // Removed ordinal utilities per requirement
+
+      async function parseResponse() {
+        const companyInput = document.getElementById("company");
+        const company = companyInput.value.trim();
+
+        if (!company) {
+          showCustomAlert("⚠️ Please enter a company name.");
+          return;
+        }
+
+        // Show enhanced loading UI
+        const loadingWrapper = document.getElementById("loadingWrapper");
+        const loadingBar = document.getElementById("loadingBar");
+        const loadingPercent = document.getElementById("loadingPercent");
+        const loadingLabel = document.getElementById("loadingLabel");
+        loadingWrapper.style.display = "block";
+        loadingBar.style.width = "0%";
+        if (loadingPercent) loadingPercent.textContent = "0%";
+        if (loadingLabel) loadingLabel.textContent = "Fetching company data…";
+
+        // Smooth animated progress using requestAnimationFrame
+        let progress = 0;
+        let rafId = null;
+        const animate = () => {
+          // Ease towards 95%
+          progress += (95 - progress) * 0.05;
+          if (progress > 95) progress = 95;
+          loadingBar.style.width = progress + "%";
+          if (loadingPercent) loadingPercent.textContent = Math.round(progress) + "%";
+          rafId = requestAnimationFrame(animate);
+        };
+        rafId = requestAnimationFrame(animate);
+
+        try {
+          // NOTE: This API call is assumed to be working on the backend
+          const response = await fetch(
+            `/api/getdata?name=${encodeURIComponent(company)}`
+          );
+          const text = await response.json();
+
+          // Hide loading bar when done
+          if (rafId) cancelAnimationFrame(rafId);
+          loadingBar.style.width = "100%";
+          if (loadingPercent) loadingPercent.textContent = "100%";
+          if (loadingLabel) loadingLabel.textContent = "Finalizing…";
+          setTimeout(() => {
+            loadingWrapper.style.display = "none";
+            loadingBar.style.width = "0%";
+            if (loadingPercent) loadingPercent.textContent = "0%";
+            if (loadingLabel) loadingLabel.textContent = "Fetching company data…";
+          }, 300);
+
+          const parsedData = {
+            companyName: company,
+            companyIDLabel: "LLPIN",
+            companyID: text.data.LLPIN ? text.data.LLPIN : "",
+            dateOfIncorporation: text.data["Date of Incorporation"]
+              ? text.data["Date of Incorporation"]
+              : "",
+            companyType: text.data.Activity ? text.data.Activity : "",
+            address: text.data.Address ? text.data.Address : "",
+            directors: text.data.Directors || [],
+          };
+
+          // Ensure at least two directors for LLP
+          if (parsedData.directors.length < 2) {
+            while (parsedData.directors.length < 2) {
+              parsedData.directors.push({});
+            }
+            showCustomAlert(
+              "⚠️ Note: The fetched data returned less than two partners. Empty fields have been added to meet the minimum requirement for an LLP."
+            );
+          }
+
+          document.getElementById("parsedDetails").innerHTML = `
+          <h2>Parsed Company Details: </h2>
+          <div class="editable-row">
+            <label>Company Name:</label>
+            <input type="text" id="COMPANY_NAME" class="editable-field uppercase-input" value="${
+              parsedData.companyName || "Not found"
+            }">
+          </div>
+          <div class="editable-row">
+            <label>${parsedData.companyIDLabel}:</label>
+            <input type="text" id="COMPANY_ID" class="editable-field" value="${
+              parsedData.companyID || "Not found"
+            }">
+          </div>
+          <div class="editable-row">
+            <label>Date of Incorporation:</label>
+            <input type="text" id="DATE_OF_INCORPORATION" class="editable-field" value="${
+              parsedData.dateOfIncorporation || "Not found"
+            }">
+          </div>
+          <div class="editable-row">
+            <label>COMPANY TYPE:</label>
+            <input type="text" id="COMPANY_TYPE" class="editable-field" value="${
+              parsedData.companyType || "Not found"
+            }">
+          </div>
+          <div class="editable-row">
+            <label>ADDRESS:</label>
+            <textarea id="ADDRESS" class="editable-field" rows="3">${
+              parsedData.address || "Not found"
+            }</textarea>
+          </div>
+          <div class="editable-row with-button">
+            <label>Number of Business Natures:</label>
+            <select id="natureCount" onchange="handleNatureCountChange()">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+          </div>
+          <div id="businessNatureInputsContainer">
+          </div>
+          <div class="editable-row with-button">
+            <label>Combined Description:</label>
+            <textarea id="BUSINESS_TYPE" class="editable-field" rows="3" placeholder="Combined business description will appear here" required readonly></textarea>
+            <button id="fetchBusinessDescriptionBtn" onclick="fetchAndCombineDescriptions()">Fetch</button>
+          </div>
+          <div class="editable-row">
+            <label>PLACE:</label>
+            <input type="text" id="PLACE" class="editable-field" placeholder="Location where the agreement is made" required>
+          </div>
+          <div class="editable-row">
+            <label>DEED DATE:</label>
+            <input type="text" id="DATE" class="editable-field" placeholder="DD-MM-YYYY" maxlength="10" required>
+          </div>
+          <div class="editable-row">
+            <input type="text" id="DEED_DATE" class="editable-field" placeholder="06th day of January, 2025" readonly hidden>
+          </div>
+          <div class="editable-row">
+            <input type="text" id="DAY" class="editable-field" required hidden>
+          </div>
+          <div class="editable-row">
+            <label>Type of Addition:</label>
+            <select id="TYPE_OF_ADDITION" class="editable-field" required>
+              <option value="">Select</option>
+              <option value="ADDITION">Addition of Partner</option>
+              <option value="CESSATION_ADDITION">Cessation cum Addition of Partner</option>
+            </select>
+          </div>
+          <div id="additionDynamicContainer"></div>
+          <div class="editable-row">
+            <label>Designated Partners:</label>
+            <select id="PARTNER" class="editable-field" required></select>
+          </div>
+          <div class="editable-row" id="dpNamesRow" style="display: none;">
+            <label>DP Names:</label>
+            <input type="text" id="DP" class="editable-field uppercase-input" readonly placeholder="Auto-filled designated partner names">
+          </div>
+          <div class="editable-row">
+            <label>Total Share Rs. in Words:</label>
+            <input type="text" id="TOTAL_RUPEES_WORDS" class="editable-field" readonly>
+          </div>
+        `;
+          // Initial call to set up business nature inputs and listeners
+          handleNatureCountChange();
+
+          document.getElementById("directorsSection").innerHTML = `
+            <div class="director-controls">
+                <h2>Partner Details</h2>
+                <button onclick="addPartnerField()">+ Add Partner</button>
+            </div>
+            <div id="directorFieldsContainer" class="fetch-container1">
+                ${parsedData.directors
+                  .map((d, i) => createPartnerBoxHTML(d, i + 1))
+                  .join("")}
+            </div>
+            <div class="button-center">
+                <button id="convert" disabled>Convert to Word</button>
+            </div>
+        `;
+
+          // Attach listeners for all initial partner share fields and required fields
+          parsedData.directors.forEach((_, i) =>
+            attachPartnerFieldListeners(i + 1)
+          );
+
+          // Attach uppercase behavior to new dynamic fields
+          addUppercaseListeners(document);
+
+          // Populate the Designated Partners dropdown
+          updatePartnerDropdown();
+
+          document
+            .getElementById("DATE")
+            .addEventListener("input", function (e) {
+              let value = e.target.value.replace(/\D/g, "");
+
+              // Auto-insert hyphens
+              if (value.length > 2)
+                value = value.slice(0, 2) + "-" + value.slice(2);
+              if (value.length > 5)
+                value = value.slice(0, 5) + "-" + value.slice(5, 9);
+              e.target.value = value;
+
+              const dateRegex = /^(\d{2})-(\d{2})-(\d{4})$/;
+              const match = value.match(dateRegex);
+
+              let dayField = document.getElementById("DAY");
+              let deedDateField = document.getElementById("DEED_DATE");
+              dayField.value = "";
+              deedDateField.value = "";
+              e.target.style.backgroundColor = "";
+
+              if (match) {
+                let [full, day, month, year] = match;
+                day = parseInt(day, 10);
+                month = parseInt(month, 10);
+                year = parseInt(year, 10);
+
+                let dateObj = new Date(year, month - 1, day);
+
+                if (
+                  dateObj.getFullYear() !== year ||
+                  dateObj.getMonth() !== month - 1 ||
+                  dateObj.getDate() !== day
+                ) {
+                  e.target.style.backgroundColor = "#66ac4c40"; // Highlight invalid date
+                } else {
+                  let days = [
+                    "Sunday",
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                  ];
+                  dayField.value = days[dateObj.getDay()];
+                  deedDateField.value = formatDateForDeed(full);
+                  e.target.style.backgroundColor = "";
+                }
+              }
+              checkRequiredFields();
+            });
+
+          // Type of Addition dynamic fields
+          const typeSelect = document.getElementById("TYPE_OF_ADDITION");
+          if (typeSelect) {
+            typeSelect.addEventListener("change", function () {
+              renderAdditionDynamicFields(this.value);
+              checkRequiredFields();
+            });
+          }
+
+          // Add listeners to the main required fields outside the directors section
+          const requiredFields = document.querySelectorAll(
+            "#parsedDetails [required], #directorsSection [required], #PARTNER, .business-nature-field[required]"
+          );
+          requiredFields.forEach((field) =>
+            field.addEventListener("input", checkRequiredFields)
+          );
           checkRequiredFields();
 
-          convert.addEventListener("click", handleConvertClick);
-        });
-    }
+          document
+            .getElementById("convert")
+            .addEventListener("click", handleConvertClick);
+          document
+            .getElementById("PARTNER")
+            .addEventListener("change", function () {
+              updateDesignatedPartnerNames();
+              checkRequiredFields();
+            });
+        } catch (err) {
+          // Hide loading bar on error
+          if (rafId) cancelAnimationFrame(rafId);
+          loadingWrapper.style.display = "none";
+          loadingBar.style.width = "0%";
+          if (loadingPercent) loadingPercent.textContent = "0%";
+          if (loadingLabel) loadingLabel.textContent = "Fetching company data…";
+          showCustomAlert("❌ Error fetching company data: " + err.message);
+          console.error(err);
+        }
+      }
 
-    async function handleConvertClick() {
-      const directors = [];
-      document.querySelectorAll(".director-box1").forEach((box, i) => {
-        const idx = i + 1;
-        directors.push({
-          name: document.getElementById(`PERSON_${idx}`)?.value || "",
-          designation: document.getElementById(`PERSON_${idx}_D`)?.value || "",
-          din: document.getElementById(`PERSON_${idx}_DIN`)?.value || "",
-          pan: document.getElementById(`PAN_${idx}`).value || "",
-          address: document.getElementById(`ADDRESS_${idx}`).value || "",
-          shareRs: document.getElementById(`SHARE-Rs_${idx}`).value || "",
-          sharePercent: document.getElementById(`SHARE-%_${idx}`).value || ""
-        });
+      // Initialize uppercase behavior on initial load
+      document.addEventListener("DOMContentLoaded", function () {
+        addUppercaseListeners(document);
       });
 
-      const replacements = {
-        page: "Add",
-        COMPANY_NAME: document.getElementById("COMPANY_NAME").value,
-        COMPANY_ID: document.getElementById("COMPANY_ID").value,
-        DATE_OF_INCORPORATION: document.getElementById("DATE_OF_INCORPORATION").value,
-        COMPANY_TYPE: document.getElementById("COMPANY_TYPE").value,
-        ADDRESS: document.getElementById("ADDRESS").value,
-        BUSINESS_TYPE: document.getElementById("BUSINESS_TYPE").value,
-        PLACE: document.getElementById("PLACE").value,
-        DATE: document.getElementById("DATE").value,
-        DEED_DATE: document.getElementById("DEED_DATE").value,
-        DAY: document.getElementById("DAY").value,
-        PARTNER: document.getElementById("PARTNER").value,
-        directors
-      };
+      // Render dynamic sections based on Type of Addition selection
+      function renderAdditionDynamicFields(type) {
+        const container = document.getElementById("additionDynamicContainer");
+        if (!container) return;
+        container.innerHTML = "";
 
-      try {
-        const res = await fetch("/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(replacements)
+        const buildHeader = (text) => `<div class="section-header" style="margin: 8px 0 4px; font-weight: 600;">${text}</div>`;
+        const buildRow = (label, id, placeholder = "", type = "text") => `
+          <div class=\"editable-row\">
+            <label>${label}:</label>
+            <input type=\"${type}\" id=\"${id}\" class=\"editable-field\" placeholder=\"${placeholder}\" required>
+          </div>
+        `;
+
+        const dateMaskAttrs = 'placeholder="DD-MM-YYYY" maxlength="10"';
+
+        if (type === "ADDITION") {
+          container.innerHTML = `
+            ${buildHeader("Addition of Partner")}
+            ${buildRow("Name", "ADD_NAME", "Partner Name")}
+            ${buildRow("DIN", "ADD_DIN", "8-digit DIN")}
+            ${buildRow("Designation", "ADD_DESIGNATION", "Partner / Designated Partner")}
+            <div class=\"editable-row\">\n              <label>Date of Effective:</label>\n              <input type=\"text\" id=\"ADD_EFFECTIVE_DATE\" class=\"editable-field\" ${dateMaskAttrs} required>\n            </div>
+          `;
+        } else if (type === "CESSATION_ADDITION") {
+          container.innerHTML = `
+            ${buildHeader("Cessation of Partner")}
+            ${buildRow("Name", "CES_NAME", "Partner Name")}
+            ${buildRow("DIN", "CES_DIN", "8-digit DIN")}
+            ${buildRow("Designation", "CES_DESIGNATION", "Partner / Designated Partner")}
+            <div class=\"editable-row\">\n              <label>Date of Effective:</label>\n              <input type=\"text\" id=\"CES_EFFECTIVE_DATE\" class=\"editable-field\" ${dateMaskAttrs} required>\n            </div>
+            ${buildHeader("Addition of Partner")}
+            ${buildRow("Name", "ADD_NAME", "Partner Name")}
+            ${buildRow("DIN", "ADD_DIN", "8-digit DIN")}
+            ${buildRow("Designation", "ADD_DESIGNATION", "Partner / Designated Partner")}
+            <div class=\"editable-row\">\n              <label>Date of Effective:</label>\n              <input type=\"text\" id=\"ADD_EFFECTIVE_DATE\" class=\"editable-field\" ${dateMaskAttrs} required>\n            </div>
+          `;
+        }
+
+        // Wire helpers for new fields
+        const dinInputs = container.querySelectorAll('#ADD_DIN, #CES_DIN');
+        dinInputs.forEach((el) => {
+          el.addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '').slice(0, 8);
+            validateDIN(this);
+          });
+          el.addEventListener('blur', function() { validateDIN(this); });
         });
 
-        if (!res.ok) return;
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "output.docx";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      } catch (err) {
-        console.error(err);
+        const nameInputs = container.querySelectorAll('#ADD_NAME, #CES_NAME');
+        nameInputs.forEach((el) => {
+          el.classList.add('uppercase-input');
+        });
+        addUppercaseListeners(container);
+
+        const dateInputs = container.querySelectorAll('#ADD_EFFECTIVE_DATE, #CES_EFFECTIVE_DATE');
+        dateInputs.forEach((el) => {
+          el.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, "");
+            if (value.length > 2) value = value.slice(0, 2) + '-' + value.slice(2);
+            if (value.length > 5) value = value.slice(0, 5) + '-' + value.slice(5, 9);
+            e.target.value = value;
+          });
+        });
       }
-    }
-  </script>
-</body>
+
+      async function handleConvertClick() {
+        const directors = [];
+        let totalRupees = 0;
+        let totalPercent = 0;
+
+        document.querySelectorAll(".director-box1").forEach((box) => {
+          const idx = box.getAttribute("data-index");
+
+          const rawShareRs =
+            document
+              .getElementById(`SHARE-Rs_${idx}`)
+              ?.value.replace(/[^\d.]/g, "") || "0";
+          const rs = parseFloat(rawShareRs) || 0;
+
+          const rawSharePct =
+            document
+              .getElementById(`SHARE-%_${idx}`)
+              ?.value.replace(/[^0-9.]/g, "") || "0";
+          const pct = parseFloat(rawSharePct) || 0;
+
+          directors.push({
+            name: document.getElementById(`PERSON_${idx}`)?.value || "",
+            designation:
+              document.getElementById(`PERSON_${idx}_D`)?.value || "",
+            din: document.getElementById(`PERSON_${idx}_DIN`)?.value || "",
+            father: document.getElementById(`FATHER_${idx}`)?.value || "",
+            pan: document.getElementById(`PAN_${idx}`)?.value || "",
+            address: document.getElementById(`ADDRESS_${idx}`)?.value || "",
+            shareRs: formatIndianCommas(rawShareRs),
+            sharePercent: `${pct}%`,
+            shareCalculated: document.getElementById(`CALCULATED_SHARE-%_${idx}`)?.value || "",
+          });
+
+          totalRupees += rs;
+          totalPercent += pct;
+        });
+
+        // Check if total percentage is close to 100 (allowing for minor floating point errors)
+        if (Math.abs(totalPercent - 100) > 0.01) {
+          showCustomAlert(
+            `⚠️ Total Profit/Loss Ratio must equal 100%. Currently: ${totalPercent.toFixed(
+              2
+            )}%`
+          );
+          return;
+        }
+        if (totalRupees <= 0) {
+          showCustomAlert("⚠️ Total Share Rupees must be greater than 0.");
+          return;
+        }
+
+        const TOTAL1 = formatIndianCommas(Math.round(totalRupees));
+        const TOTAL2 =
+          (Number.isInteger(totalPercent)
+            ? totalPercent
+            : totalPercent.toFixed(2)) + "%";
+        const totalRupeesInWords = convertToWords(Math.round(totalRupees));
+
+        // Ensure the "Total Share Rs. in Words" field is up to date
+        document.getElementById("TOTAL_RUPEES_WORDS").value =
+          totalRupeesInWords;
+
+        const replacements = {
+          page: "LLP Add",
+          COMPANY_NAME: document.getElementById("COMPANY_NAME")?.value || "",
+          COMPANY_ID: document.getElementById("COMPANY_ID")?.value || "",
+          DATE_OF_INCORPORATION: document.getElementById("DATE_OF_INCORPORATION")?.value || "",
+          COMPANY_TYPE: document.getElementById("COMPANY_TYPE")?.value || "",
+          ADDRESS: document.getElementById("ADDRESS")?.value || "",
+          BUSINESS_TYPE: document.getElementById("BUSINESS_TYPE")?.value || "",
+          PLACE: document.getElementById("PLACE")?.value || "",
+          DATE: document.getElementById("DATE")?.value || "",
+          DEED_DATE: document.getElementById("DEED_DATE")?.value || "",
+          DAY: document.getElementById("DAY")?.value || "",
+          PARTNER: document.getElementById("PARTNER")?.value || "",
+          DP: document.getElementById("DP")?.value || "",
+          TOTAL_RUPEES_WORDS: totalRupeesInWords,
+          TOTAL1: TOTAL1,
+          TOTAL2: TOTAL2,
+          directors,
+        };
+
+        try {
+          // NOTE: This API call is assumed to be working on the backend
+          const res = await fetch("/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(replacements),
+          });
+
+          if (!res.ok) {
+            throw new Error(`Server error: ${res.status} ${res.statusText}`);
+          }
+
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${
+            document.getElementById("COMPANY_NAME")?.value || "LLP_Agreement"
+          } Initial.docx`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          // Removed document downloaded alert per requirement
+        } catch (err) {
+          console.error("Error during document generation:", err);
+          showCustomAlert(
+            "❌ An error occurred while generating the document. Please check the console for details."
+          );
+        }
+      }
+    </script>
+    <a href="https://www.on-tym.solutions/" target="_blank" rel="noopener noreferrer">
+      <img src="/Ontym.png" alt="On-tym Logo" class="fixed-bottom-logo" />
+    </a>
+  </body>
 </html>

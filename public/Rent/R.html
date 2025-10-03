@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Compliance First - Rent</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="background"></div>
+  <a href="#" class="home-btn" onclick="event.preventDefault(); history.back();">← BACK</a>
+  <header>
+    <img src="logo.png" alt="Logo" class="logo"/>
+    <h1 class="company-name">Rental Agreement</h1>
+  </header>
+  <main>
+
+    <div class="fetch-container">
+      <h2>Rent Terms</h2>
+      <div class="editable-row">
+        <label>Deed Date:</label>
+        <input type="text" id="TERMS_DEED_DATE" class="editable-field" placeholder="DD-MM-YYYY" maxlength="10" required>
+      </div>
+      <div class="editable-row">
+        <label>Advance Amount:</label>
+        <input type="text" id="TERMS_ADVANCE" class="editable-field" placeholder="e.g., 1,00,000" required>
+      </div>
+      <div class="editable-row">
+        <label>Rent Amount:</label>
+        <input type="text" id="TERMS_RENT" class="editable-field" placeholder="e.g., 25,000" required>
+      </div>
+      <div class="editable-row">
+        <label>Increase of Rent:</label>
+        <div style="display:flex; gap:8px; width:100%; align-items:center;">
+          <input type="text" id="TERMS_INCREASE_PCT" class="editable-field" placeholder="e.g., 5%" style="flex:1;" required>
+          <select id="TERMS_INCREASE_FREQ" class="editable-field" style="flex:1;" required>
+            <option value="">Every…</option>
+            <option value="YEAR">Year</option>
+            <option value="TWO_YEARS">2 Years</option>
+            <option value="THREE_YEARS">3 Years</option>
+            <option value="FOUR_YEARS">4 Years</option>
+            <option value="FIVE_YEARS">5 Years</option>
+            <option value="SIX_YEARS">6 Years</option>
+            <option value="SEVEN_YEARS">7 Years</option>
+            <option value="EIGHT_YEARS">8 Years</option>
+            <option value="NINE_YEARS">9 Years</option>
+            <option value="TEN_YEARS">10 Years</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="fetch-container">
+      <h2>Lessor</h2>
+      <div class="editable-row">
+        <label>Lessor Type:</label>
+        <select id="LESSOR_TYPE" class="editable-field" required>
+          <option value="">Select</option>
+          <option value="FIRM">Firm</option>
+          <option value="INDIVIDUAL">Individual</option>
+          <option value="LLP_PVT">LLP / Pvt Ltd</option>
+        </select>
+      </div>
+      <div id="lessorFieldsContainer"></div>
+      </div>
+
+    <div class="fetch-container">
+      <h2>Lessee</h2>
+      <div class="editable-row">
+        <label>Lessee Type:</label>
+        <select id="LESSEE_TYPE" class="editable-field" required>
+          <option value="">Select</option>
+          <option value="LLP">LLP</option>
+          <option value="FIRM">Firm</option>
+          <option value="PVT">Pvt Ltd</option>
+          <option value="SOLE">Sole Proprietor</option>
+        </select>
+      </div>
+      <div id="lesseeDynamicContainer"></div>
+      </div>
+
+    <div class="fetch-container">
+      <h2>Lease Details</h2>
+      <div class="editable-row">
+        <label>Lease Address:</label>
+        <textarea id="LEASE_ADDRESS" class="editable-field" rows="3" required></textarea>
+      </div>
+      <div class="editable-row">
+        <label>From Date:</label>
+        <input type="text" id="FROM_DATE" class="editable-field" placeholder="DD-MM-YYYY" maxlength="10" required>
+      </div>
+      <div class="editable-row">
+        <label>To Date:</label>
+        <input type="text" id="TO_DATE" class="editable-field" placeholder="DD-MM-YYYY" maxlength="10" required>
+        </div>
+        <div class="editable-row">
+        <label>Duration:</label>
+        <input type="text" id="LEASE_DURATION" class="editable-field" readonly placeholder="e.g., 11 months or 1 year 10 days">
+        </div>
+    </div>
+      </div>
+    </div>
+
+    <div class="button-center" id="convertContainer">
+      <button id="convert" disabled>Convert to Word</button>
+    </div>
+
+    <script>
+      function renderLessorFields(type) {
+        const container = document.getElementById('lessorFieldsContainer');
+        container.innerHTML = '';
+        if (type === 'INDIVIDUAL') {
+          container.innerHTML = `
+            <div class="editable-row"><label>Individual</label></div>
+            <div class="editable-row">
+              <label>Name:</label>
+              <input type="text" id="LESSOR_NAME" class="editable-field" required>
+            </div>
+            <div class="editable-row">
+              <label>Aadhaar:</label>
+              <input type="text" id="LESSOR_AADHAAR" class="editable-field" placeholder="12-digit Aadhaar" maxlength="12" required>
+            </div>
+            <div class="editable-row">
+              <label>Residing Address:</label>
+              <textarea id="LESSOR_ADDRESS" class="editable-field" rows="3" required></textarea>
+            </div>
+          `;
+        } else if (type === 'LLP_PVT') {
+          container.innerHTML = `
+            <div class="editable-row"><label>LLP / Pvt Ltd</label></div>
+        <div class="editable-row">
+              <label>Entity Name:</label>
+              <input type="text" id="LESSOR_FIRM_NAME" class="editable-field" required>
+        </div>
+        <div class="editable-row">
+              <label>LLPIN / CIN:</label>
+              <input type="text" id="LESSOR_ID" class="editable-field" required>
+        </div>
+        <div class="editable-row">
+              <label>PAN:</label>
+              <input type="text" id="LESSOR_PAN" class="editable-field" required>
+        </div>
+        <div class="editable-row">
+              <label>Registered Address:</label>
+              <textarea id="LESSOR_FIRM_ADDRESS" class="editable-field" rows="3" required></textarea>
+            </div>
+          `;
+        } else if (type === 'FIRM') {
+          container.innerHTML = `
+            <div class="editable-row"><label>Firm</label></div>
+            <div class="editable-row">
+              <label>Firm Name:</label>
+              <input type="text" id="LESSOR_FIRM_NAME" class="editable-field" required>
+        </div>
+        <div class="editable-row">
+              <label>PAN:</label>
+              <input type="text" id="LESSOR_PAN" class="editable-field" required>
+        </div>
+        <div class="editable-row">
+              <label>Firm Address:</label>
+              <textarea id="LESSOR_FIRM_ADDRESS" class="editable-field" rows="3" required></textarea>
+        </div>
+          `;
+        }
+      }
+
+      document.getElementById('LESSOR_TYPE').addEventListener('change', function() {
+        renderLessorFields(this.value);
+      });
+
+      // Lessee dynamic fields renderer
+      function renderLesseeFields(type) {
+        const c = document.getElementById('lesseeDynamicContainer');
+        c.innerHTML = '';
+        if (type === 'LLP') {
+          c.innerHTML = `
+            <div class="editable-row"><label>LLP</label></div>
+            <div class="editable-row"><label>LLP Name:</label><input type="text" id="LESSEE_NAME" class="editable-field" required></div>
+            <div class="editable-row"><label>LLPIN:</label><input type="text" id="LESSEE_ID" class="editable-field" required></div>
+            <div class="editable-row"><label>PAN:</label><input type="text" id="LESSEE_PAN" class="editable-field" required></div>
+            <div class="editable-row"><label>Registered Address:</label><textarea id="LESSEE_ADDRESS" class="editable-field" rows="3" required></textarea></div>
+            <div class="editable-row"><label>Partner Name:</label><input type="text" id="LESSEE_PERSON_NAME" class="editable-field" required></div>
+            <div class="editable-row"><label>Designation:</label><input type="text" id="LESSEE_DESIGNATION" class="editable-field" value="Designated Partner" required></div>
+            <div class="editable-row"><label>AADHAAR:</label><input type="text" id="LESSEE_AADHAAR" class="editable-field" maxlength="12" required></div>
+            <div class="editable-row"><label>PAN (Person):</label><input type="text" id="LESSEE_PERSON_PAN" class="editable-field" required></div>
+          `;
+        } else if (type === 'PVT') {
+          c.innerHTML = `
+            <div class="editable-row"><label>Pvt Ltd</label></div>
+            <div class="editable-row"><label>Company Name:</label><input type="text" id="LESSEE_NAME" class="editable-field" required></div>
+            <div class="editable-row"><label>CIN:</label><input type="text" id="LESSEE_ID" class="editable-field" required></div>
+            <div class="editable-row"><label>PAN:</label><input type="text" id="LESSEE_PAN" class="editable-field" required></div>
+            <div class="editable-row"><label>Registered Address:</label><textarea id="LESSEE_ADDRESS" class="editable-field" rows="3" required></textarea></div>
+            <div class="editable-row"><label>Director Name:</label><input type="text" id="LESSEE_PERSON_NAME" class="editable-field" required></div>
+            <div class="editable-row"><label>Designation:</label><input type="text" id="LESSEE_DESIGNATION" class="editable-field" value="Director" required></div>
+            <div class="editable-row"><label>AADHAAR:</label><input type="text" id="LESSEE_AADHAAR" class="editable-field" maxlength="12" required></div>
+            <div class="editable-row"><label>PAN (Person):</label><input type="text" id="LESSEE_PERSON_PAN" class="editable-field" required></div>
+          `;
+        } else if (type === 'FIRM') {
+          c.innerHTML = `
+            <div class="editable-row"><label>Firm</label></div>
+            <div class="editable-row"><label>Firm Name:</label><input type="text" id="LESSEE_NAME" class="editable-field" required></div>
+            <div class="editable-row"><label>PAN:</label><input type="text" id="LESSEE_PAN" class="editable-field" required></div>
+            <div class="editable-row"><label>Registered Address:</label><textarea id="LESSEE_ADDRESS" class="editable-field" rows="3" required></textarea></div>
+            <div class="editable-row"><label>Name:</label><input type="text" id="LESSEE_PERSON_NAME" class="editable-field" required></div>
+            <div class="editable-row"><label>AADHAAR:</label><input type="text" id="LESSEE_AADHAAR" class="editable-field" maxlength="12" required></div>
+            <div class="editable-row"><label>PAN (Person):</label><input type="text" id="LESSEE_PERSON_PAN" class="editable-field" required></div>
+          `;
+        } else if (type === 'SOLE') {
+          c.innerHTML = `
+            <div class="editable-row"><label>Sole Proprietor</label></div>
+            <div class="editable-row"><label>Business Name:</label><input type="text" id="LESSEE_NAME" class="editable-field" required></div>
+            <div class="editable-row"><label>Registered Address:</label><textarea id="LESSEE_ADDRESS" class="editable-field" rows="3" required></textarea></div>
+            <div class="editable-row"><label>Name:</label><input type="text" id="LESSEE_PERSON_NAME" class="editable-field" required></div>
+            <div class="editable-row"><label>Designation:</label><input type="text" id="LESSEE_DESIGNATION" class="editable-field" value="Proprietor" required></div>
+            <div class="editable-row"><label>AADHAAR:</label><input type="text" id="LESSEE_AADHAAR" class="editable-field" maxlength="12" required></div>
+            <div class="editable-row"><label>PAN:</label><input type="text" id="LESSEE_PAN" class="editable-field" required></div>
+          `;
+        }
+      }
+
+      document.getElementById('LESSEE_TYPE').addEventListener('change', function() {
+        renderLesseeFields(this.value);
+      });
+
+      function maskDateInput(el) {
+        el.addEventListener('input', function(e) {
+          let v = e.target.value.replace(/\D/g, '');
+          if (v.length > 2) v = v.slice(0,2) + '-' + v.slice(2);
+          if (v.length > 5) v = v.slice(0,5) + '-' + v.slice(5,9);
+          e.target.value = v;
+        });
+      }
+
+      const fromEl = document.getElementById('FROM_DATE');
+      const toEl = document.getElementById('TO_DATE');
+      const durEl = document.getElementById('LEASE_DURATION');
+      maskDateInput(fromEl);
+      maskDateInput(toEl);
+      const deedTermsEl = document.getElementById('TERMS_DEED_DATE');
+      if (deedTermsEl) maskDateInput(deedTermsEl);
+
+      function parseDMY(s) {
+        const m = s.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+        if (!m) return null;
+        const d = parseInt(m[1],10), mo = parseInt(m[2],10), y = parseInt(m[3],10);
+        const dt = new Date(y, mo - 1, d);
+        if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+        return dt;
+      }
+
+      function diffYMD(from, to) {
+        let y = to.getFullYear() - from.getFullYear();
+        let m = to.getMonth() - from.getMonth();
+        let d = to.getDate() - from.getDate();
+        if (d < 0) {
+          const prevMonth = new Date(to.getFullYear(), to.getMonth(), 0).getDate();
+          d += prevMonth;
+          m -= 1;
+        }
+        if (m < 0) {
+          m += 12;
+          y -= 1;
+        }
+        return { years: y, months: m, days: d };
+      }
+
+      function formatDuration(obj) {
+        const parts = [];
+        if (obj.years) parts.push(obj.years + (obj.years === 1 ? ' year' : ' years'));
+        if (obj.months) parts.push(obj.months + (obj.months === 1 ? ' month' : ' months'));
+        if (obj.days) parts.push(obj.days + (obj.days === 1 ? ' day' : ' days'));
+        return parts.length ? parts.join(' ') : '0 days';
+      }
+
+      function updateDuration() {
+        const f = parseDMY(fromEl.value);
+        const t = parseDMY(toEl.value);
+        if (!f || !t || t < f) {
+          durEl.value = '';
+          return;
+        }
+        const diff = diffYMD(f, t);
+        durEl.value = formatDuration(diff);
+      }
+
+      fromEl.addEventListener('input', updateDuration);
+      toEl.addEventListener('input', updateDuration);
+
+      // Currency and percent formatting
+      function formatIndianCommas(numStr) {
+        const num = String(numStr).replace(/[^\d.]/g, '');
+        if (!num) return '';
+        const parts = num.split('.');
+        let integerPart = parts[0];
+        const decimalPart = parts.length > 1 ? '.' + parts[1] : '';
+        if (integerPart.length > 3) {
+          let lastThree = integerPart.substring(integerPart.length - 3);
+          let otherNumbers = integerPart.substring(0, integerPart.length - 3);
+          integerPart = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + lastThree;
+        }
+        return integerPart + decimalPart;
+      }
+
+      function attachCurrencyMask(el) {
+        el.addEventListener('input', function(e) {
+          e.target.value = e.target.value.replace(/[^\d.,]/g, '');
+        });
+        el.addEventListener('blur', function(e) {
+          const clean = e.target.value.replace(/[^\d.]/g, '');
+          e.target.value = formatIndianCommas(clean);
+        });
+        el.addEventListener('focus', function(e) {
+          e.target.value = e.target.value.replace(/[^\d.]/g, '');
+        });
+      }
+
+      const advEl = document.getElementById('TERMS_ADVANCE');
+      const rentEl = document.getElementById('TERMS_RENT');
+      if (advEl) attachCurrencyMask(advEl);
+      if (rentEl) attachCurrencyMask(rentEl);
+
+      const pctEl = document.getElementById('TERMS_INCREASE_PCT');
+      if (pctEl) {
+        pctEl.addEventListener('input', function() {
+          let value = this.value.replace(/[^0-9.]/g, '');
+          let num = parseFloat(value);
+          if (!isNaN(num)) {
+            if (num < 0) num = 0;
+            if (num > 100) num = 100;
+            this.value = num.toString() + '%';
+          } else {
+            this.value = '';
+          }
+        });
+        pctEl.addEventListener('focus', function() {
+          this.value = this.value.replace(/[^0-9.]/g, '');
+        });
+        pctEl.addEventListener('blur', function() {
+          let value = this.value.replace(/[^0-9.]/g, '');
+          let num = parseFloat(value);
+          if (!isNaN(num)) {
+            if (num < 0) num = 0;
+            if (num > 100) num = 100;
+            this.value = num.toString() + '%';
+          } else {
+            this.value = '';
+          }
+        });
+      }
+
+      // Enable Convert button when all required fields are filled
+      const convertBtn = document.getElementById('convert');
+      function checkRequired() {
+        const required = document.querySelectorAll('.fetch-container input[required], .fetch-container textarea[required], .fetch-container1 input[required], .fetch-container1 textarea[required]');
+        let ok = true;
+        required.forEach(f => { if (!f.value.trim()) ok = false; });
+        convertBtn.disabled = !ok;
+      }
+      document.addEventListener('input', checkRequired);
+      document.getElementById('LESSOR_TYPE').addEventListener('change', checkRequired);
+
+      // Click handler to generate DOCX (reference flow similar to LLP pages)
+      convertBtn.addEventListener('click', async function() {
+        const lessorType = document.getElementById('LESSOR_TYPE').value;
+        const lessor = { type: lessorType };
+        if (lessorType === 'INDIVIDUAL') {
+          lessor.name = document.getElementById('LESSOR_NAME')?.value || '';
+          lessor.aadhaar = document.getElementById('LESSOR_AADHAAR')?.value || '';
+          lessor.address = document.getElementById('LESSOR_ADDRESS')?.value || '';
+        } else if (lessorType === 'LLP_PVT') {
+          lessor.firmName = document.getElementById('LESSOR_FIRM_NAME')?.value || '';
+          lessor.id = document.getElementById('LESSOR_ID')?.value || '';
+          lessor.pan = document.getElementById('LESSOR_PAN')?.value || '';
+          lessor.address = document.getElementById('LESSOR_FIRM_ADDRESS')?.value || '';
+        } else if (lessorType === 'FIRM') {
+          lessor.firmName = document.getElementById('LESSOR_FIRM_NAME')?.value || '';
+          lessor.pan = document.getElementById('LESSOR_PAN')?.value || '';
+          lessor.address = document.getElementById('LESSOR_FIRM_ADDRESS')?.value || '';
+        }
+
+        const lesseeType = document.getElementById('LESSEE_TYPE')?.value || '';
+        const lessee = { type: lesseeType };
+        if (lesseeType === 'LLP' || lesseeType === 'PVT' || lesseeType === 'FIRM' || lesseeType === 'SOLE') {
+          lessee.name = document.getElementById('LESSEE_NAME')?.value || '';
+          lessee.pan = document.getElementById('LESSEE_PAN')?.value || '';
+          lessee.address = document.getElementById('LESSEE_ADDRESS')?.value || '';
+          if (lesseeType === 'LLP' || lesseeType === 'PVT') {
+            lessee.id = document.getElementById('LESSEE_ID')?.value || '';
+          }
+          lessee.personName = document.getElementById('LESSEE_PERSON_NAME')?.value || '';
+          lessee.designation = document.getElementById('LESSEE_DESIGNATION')?.value || '';
+          lessee.aadhaar = document.getElementById('LESSEE_AADHAAR')?.value || '';
+          lessee.personPan = document.getElementById('LESSEE_PERSON_PAN')?.value || '';
+        }
+
+        const lease = {
+          address: document.getElementById('LEASE_ADDRESS')?.value || '',
+          fromDate: document.getElementById('FROM_DATE')?.value || '',
+          toDate: document.getElementById('TO_DATE')?.value || '',
+          duration: document.getElementById('LEASE_DURATION')?.value || ''
+        };
+
+        const rentTerms = {
+          deedDate: document.getElementById('TERMS_DEED_DATE')?.value || '',
+          advanceAmount: document.getElementById('TERMS_ADVANCE')?.value || '',
+          rentAmount: document.getElementById('TERMS_RENT')?.value || '',
+          increasePercent: document.getElementById('TERMS_INCREASE_PCT')?.value || '',
+          increaseFrequency: document.getElementById('TERMS_INCREASE_FREQ')?.value || ''
+        };
+
+        const payload = { page: 'Rent', lessor, lessee, lease, rentTerms };
+
+        try {
+          const res = await fetch('/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+    if (!res.ok) {
+            const t = await res.text();
+            console.error('Server error:', t);
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+    a.href = url;
+          a.download = `${lessee.firmName || 'Rent'} Agreement.docx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+        } catch (e) {
+          console.error('Error generating document:', e);
+  }
+});
+    </script>
+  </main>
+
+  <a href="https://www.on-tym.solutions/" target="_blank" rel="noopener noreferrer">
+    <img src="/Ontym.png" alt="On-tym Logo" class="fixed-bottom-logo" />
+  </a>
+</body>
+</html>

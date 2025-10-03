@@ -1,32 +1,48 @@
 {
   "name": "cfpl",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "CFPL Electron App with Express Login System",
   "main": "main.js",
   "scripts": {
     "start": "concurrently \"node server.js\" \"electron .\" --kill-others",
-    "electron": "electron .",
+    "dev": "concurrently \"nodemon server.js\" \"cross-env NODE_ENV=development electron .\" --kill-others --names \"SERVER,ELECTRON\" --prefix-colors \"blue,green\"",
+    "dev:watch": "concurrently \"nodemon server.js\" \"nodemon --exec \\\"cross-env NODE_ENV=development electron .\\\" --watch main.js --watch public --watch templates\" --kill-others --names \"SERVER,ELECTRON\" --prefix-colors \"blue,green\"",
+    "dev:auto": "node electron-dev.js",
+    "electron": "cross-env NODE_ENV=development electron .",
+    "electron:prod": "electron .",
     "server": "node server.js",
-    "dist": "electron-builder",
+    "server:dev": "nodemon server.js",
+    "dist": "electron-builder --publish always",
     "postinstall": "patch-package"
   },
   "devDependencies": {
+    "chokidar": "^3.6.0",
     "concurrently": "^9.0.0",
+    "cross-env": "^10.1.0",
     "electron": "^26.6.10",
-    "electron-builder": "^24.9.1",
-    "electron-updater": "^6.2.1",
+    "electron-builder": "^24.13.3",
+    "electron-reload": "^2.0.0-alpha.1",
+    "nodemon": "^3.1.10",
     "patch-package": "^8.0.0",
     "postinstall-postinstall": "^2.1.0"
   },
   "dependencies": {
-    "dotenv": "^17.2.1",
+    "@google/generative-ai": "^0.24.1",
+    "adm-zip": "^0.5.16",
+    "body-parser": "^2.2.0",
+    "cheerio": "^1.1.2",
+    "dotenv": "^17.2.2",
+    "electron-updater": "^6.6.2",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
     "googleapis": "^108.0.0",
     "jsdom": "^26.1.0",
     "node-fetch": "^2.7.0",
     "open": "^10.2.0",
-    "pizzip": "^3.2.0"
+    "pizzip": "^3.2.0",
+    "puppeteer": "^24.22.3",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   },
   "build": {
     "appId": "com.yourcompany.cfpl",
@@ -35,6 +51,14 @@
     "win": {
       "target": "nsis",
       "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": true,
+      "uninstallDisplayName": "CFPL",
+      "include": "installer.nsh"
     },
     "directories": {
       "output": "dist"
@@ -45,7 +69,8 @@
       "credentials.json",
       "public/**/*",
       "templates/**/*",
-      "!node_modules/*electron*/**"
+      "!node_modules/electron/**",
+      "!node_modules/electron-builder/**"
     ],
     "publish": [
       {

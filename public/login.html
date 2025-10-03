@@ -5,6 +5,345 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Compliance First</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .logo1 {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 150px;
+      height: auto;
+    }
+
+    /* Advanced loading state for button */
+    .option-btn.is-loading {
+      pointer-events: none;
+      position: relative;
+      background: linear-gradient(135deg, #4caf50, #66bb6a, #81c784);
+      background-size: 200% 200%;
+      animation: loadingButtonPulse 1.5s ease-in-out infinite;
+      color: transparent;
+      overflow: hidden;
+    }
+
+    .option-btn.is-loading::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      animation: loadingShimmer 1.2s ease-in-out infinite;
+    }
+
+    .option-btn.is-loading::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      animation: advancedSpinner 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+    }
+
+    @keyframes loadingButtonPulse {
+      0%, 100% {
+        background-position: 0% 50%;
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+      }
+      50% {
+        background-position: 100% 50%;
+        transform: scale(1.02);
+        box-shadow: 0 8px 25px rgba(76, 175, 80, 0.5);
+      }
+    }
+
+    @keyframes loadingShimmer {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+
+    @keyframes advancedSpinner {
+      0% { 
+        transform: translate(-50%, -50%) rotate(0deg) scale(1);
+        opacity: 1;
+      }
+      50% { 
+        transform: translate(-50%, -50%) rotate(180deg) scale(1.1);
+        opacity: 0.8;
+      }
+      100% { 
+        transform: translate(-50%, -50%) rotate(360deg) scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Ultra-Advanced Loading Screen */
+    .loading-wrapper { 
+      display: none; 
+      margin: 20px 0; 
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,255,248,0.9));
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(76, 175, 80, 0.2);
+      box-shadow: 0 8px 32px rgba(76, 175, 80, 0.1);
+      animation: loadingContainerEntrance 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes loadingContainerEntrance {
+      0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    
+    .loading-header { 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      margin-bottom: 15px; 
+      color: #2e7d32; 
+      font-weight: 700; 
+      font-size: 14px; 
+      letter-spacing: 0.5px;
+      position: relative;
+    }
+
+    .loading-header::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -5px;
+      width: 0%;
+      height: 2px;
+      background: linear-gradient(90deg, #4caf50, #66bb6a);
+      animation: headerUnderline 2s ease-in-out infinite;
+    }
+
+    @keyframes headerUnderline {
+      0%, 100% { width: 0%; }
+      50% { width: 100%; }
+    }
+
+    #loadingLabel {
+      animation: textPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes textPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.02); }
+    }
+
+    #loadingPercent {
+      font-weight: 800;
+      color: #4caf50;
+      animation: percentBounce 0.5s ease-in-out;
+    }
+
+    @keyframes percentBounce {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    
+    .loading-track { 
+      position: relative; 
+      width: 100%; 
+      height: 12px; 
+      background: rgba(76, 175, 80, 0.1); 
+      border-radius: 999px; 
+      overflow: hidden; 
+      box-shadow: 
+        inset 0 2px 4px rgba(46, 125, 50, 0.1),
+        0 2px 8px rgba(76, 175, 80, 0.05);
+    }
+
+    .loading-track::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, 
+        rgba(76, 175, 80, 0.05) 0%, 
+        rgba(76, 175, 80, 0.1) 50%, 
+        rgba(76, 175, 80, 0.05) 100%);
+      animation: trackShimmer 2s ease-in-out infinite;
+    }
+
+    @keyframes trackShimmer {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+    
+    .loading-bar { 
+      position: absolute; 
+      left: 0; 
+      top: 0; 
+      bottom: 0; 
+      width: 0%; 
+      border-radius: 999px; 
+      background: linear-gradient(90deg, #43a047, #66bb6a, #81c784, #a5d6a7);
+      background-size: 300% 100%;
+      box-shadow: 
+        0 0 20px rgba(102, 187, 106, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3); 
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+      animation: barGradientFlow 2s linear infinite;
+      position: relative;
+    }
+
+    @keyframes barGradientFlow {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+
+    .loading-bar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255,255,255,0.4) 50%, 
+        transparent 100%);
+      animation: barHighlight 1.5s ease-in-out infinite;
+    }
+
+    @keyframes barHighlight {
+      0%, 100% { transform: translateX(-100%); }
+      50% { transform: translateX(100%); }
+    }
+    
+    .loading-bar::after { 
+      content: ""; 
+      position: absolute; 
+      inset: 0; 
+      background-image: repeating-linear-gradient(45deg, 
+        rgba(255,255,255,0.15) 0, 
+        rgba(255,255,255,0.15) 8px, 
+        transparent 8px, 
+        transparent 16px); 
+      background-size: 22px 22px; 
+      animation: advancedBarberpole 1.2s linear infinite; 
+      border-radius: inherit; 
+    }
+    
+    @keyframes advancedBarberpole { 
+      0% { background-position: 0 0; } 
+      100% { background-position: 22px 0; } 
+    }
+
+    /* Loading dots animation */
+    .loading-dots {
+      display: inline-flex;
+      gap: 4px;
+      margin-left: 8px;
+    }
+
+    .loading-dot {
+      width: 4px;
+      height: 4px;
+      background: #4caf50;
+      border-radius: 50%;
+      animation: dotPulse 1.4s ease-in-out infinite;
+    }
+
+    .loading-dot:nth-child(1) { animation-delay: 0s; }
+    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dotPulse {
+      0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+      }
+      40% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+    }
+
+    /* Advanced loading stages */
+    .loading-stage {
+      display: flex;
+      align-items: center;
+      margin: 8px 0;
+      padding: 8px 12px;
+      background: rgba(76, 175, 80, 0.05);
+      border-radius: 8px;
+      border-left: 3px solid transparent;
+      transition: all 0.3s ease;
+      opacity: 0.5;
+    }
+
+    .loading-stage.active {
+      opacity: 1;
+      border-left-color: #4caf50;
+      background: rgba(76, 175, 80, 0.1);
+      animation: stageActivate 0.5s ease-out;
+    }
+
+    .loading-stage.completed {
+      opacity: 0.8;
+      border-left-color: #66bb6a;
+      background: rgba(76, 175, 80, 0.08);
+    }
+
+    @keyframes stageActivate {
+      0% {
+        transform: translateX(-10px);
+        opacity: 0.5;
+      }
+      100% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .loading-stage-icon {
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .loading-stage.active .loading-stage-icon {
+      background: #4caf50;
+      color: white;
+      animation: iconSpin 1s linear infinite;
+    }
+
+    .loading-stage.completed .loading-stage-icon {
+      background: #66bb6a;
+      color: white;
+    }
+
+    @keyframes iconSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
   <div class="background"></div>
@@ -19,7 +358,7 @@
 
       <div class="editable-row">
         <label>USER NAME:</label>
-        <input type="text" id="USER" class="editable-field" placeholder="SHARAN" maxlength="20" required>
+        <input type="text" id="USER" class="editable-field" placeholder="Enter User ID" maxlength="20" required>
       </div>
 
       <div class="editable-row">
@@ -31,9 +370,45 @@
     <div class="button-container">
       <button id="loginBtn" class="option-btn">Login</button>
     </div>
+
+    <div id="loadingWrapper" class="loading-wrapper">
+      <div class="loading-header">
+        <span id="loadingLabel">Initializing Authentication
+          <span class="loading-dots">
+            <span class="loading-dot"></span>
+            <span class="loading-dot"></span>
+            <span class="loading-dot"></span>
+          </span>
+        </span>
+        <span id="loadingPercent">0%</span>
+      </div>
+      
+      <div class="loading-track">
+        <div id="loadingBar" class="loading-bar"></div>
+      </div>
+
+      <div id="loadingStages" class="loading-stages">
+        <div class="loading-stage" data-stage="0">
+          <div class="loading-stage-icon">1</div>
+          <span>Connecting to server...</span>
+        </div>
+        <div class="loading-stage" data-stage="1">
+          <div class="loading-stage-icon">2</div>
+          <span>Verifying credentials...</span>
+        </div>
+        <div class="loading-stage" data-stage="2">
+          <div class="loading-stage-icon">3</div>
+          <span>Loading user data...</span>
+        </div>
+        <div class="loading-stage" data-stage="3">
+          <div class="loading-stage-icon">✓</div>
+          <span>Authentication complete!</span>
+        </div>
+      </div>
+    </div>
   </main>
 
-  <!-- Toast (replaces alert) -->
+  <!-- Toast (only for errors now) -->
   <div id="toast" class="toast" role="alert" aria-live="assertive" aria-hidden="true">
     <div class="toast__icon" aria-hidden="true">⚠️</div>
     <div class="toast__content">
@@ -55,16 +430,16 @@
       let hideTimer;
 
       function hideToast(){
-        toast.classList.remove('is-visible', 'toast--error', 'toast--success');
+        toast.classList.remove('is-visible', 'toast--error');
         toast.setAttribute('aria-hidden','true');
         progressEl.style.transition = 'none';
         progressEl.style.width = '0%';
       }
 
-      function showToast(message, { title='Error', type='error', duration=3500 } = {}){
+      function showToast(message, { title='Error', duration=3500 } = {}){
         clearTimeout(hideTimer);
-        toast.classList.remove('toast--error', 'toast--success');
-        toast.classList.add(type === 'success' ? 'toast--success' : 'toast--error');
+        toast.classList.remove('toast--error');
+        toast.classList.add('toast--error');
         titleEl.textContent = title;
         msgEl.textContent = message;
 
@@ -81,14 +456,165 @@
         hideTimer = setTimeout(hideToast, duration);
       }
 
-      window.showError = (m, opts={}) => showToast(m, { title:'Error', type:'error', ...opts });
-      window.showSuccess = (m, opts={}) => showToast(m, { title:'Success', type:'success', ...opts });
+      window.showError = (m, opts={}) => showToast(m, { title:'Error', ...opts });
       window.hideToast = hideToast;
 
       closeBtn.addEventListener('click', hideToast);
     })();
 
-    // Login handler
+    // Advanced loading sequence manager
+    class LoadingSequence {
+      constructor() {
+        this.stages = [
+          { text: "Connecting to server", duration: 1000 },
+          { text: "Verifying credentials", duration: 1200 },
+          { text: "Loading user data", duration: 800 },
+          { text: "Authentication complete", duration: 500 }
+        ];
+        this.currentStage = 0;
+        this.progress = 0;
+      }
+
+      async start() {
+        const loadingWrapper = document.getElementById('loadingWrapper');
+        const loadingBar = document.getElementById('loadingBar');
+        const loadingPercent = document.getElementById('loadingPercent');
+        const loadingLabel = document.getElementById('loadingLabel');
+        
+        loadingWrapper.style.display = 'block';
+        
+        for (let i = 0; i < this.stages.length; i++) {
+          await this.runStage(i);
+        }
+      }
+
+      async runStage(stageIndex) {
+        const stage = this.stages[stageIndex];
+        const stageElement = document.querySelector(`[data-stage="${stageIndex}"]`);
+        const loadingBar = document.getElementById('loadingBar');
+        const loadingPercent = document.getElementById('loadingPercent');
+        const loadingLabel = document.getElementById('loadingLabel');
+        
+        // Update label text with dots animation
+        loadingLabel.innerHTML = `${stage.text}<span class="loading-dots">
+          <span class="loading-dot"></span>
+          <span class="loading-dot"></span>
+          <span class="loading-dot"></span>
+        </span>`;
+        
+        // Activate current stage
+        if (stageElement) {
+          stageElement.classList.add('active');
+        }
+        
+        // Animate progress bar
+        const targetProgress = ((stageIndex + 1) / this.stages.length) * 100;
+        await this.animateProgress(targetProgress, stage.duration);
+        
+        // Complete current stage
+        if (stageElement) {
+          stageElement.classList.remove('active');
+          stageElement.classList.add('completed');
+          const icon = stageElement.querySelector('.loading-stage-icon');
+          if (stageIndex < this.stages.length - 1) {
+            icon.textContent = '✓';
+          }
+        }
+        
+        // Small delay between stages
+        if (stageIndex < this.stages.length - 1) {
+          await this.delay(200);
+        }
+      }
+
+      async animateProgress(targetProgress, duration) {
+        const loadingBar = document.getElementById('loadingBar');
+        const loadingPercent = document.getElementById('loadingPercent');
+        const startProgress = this.progress;
+        const progressDiff = targetProgress - startProgress;
+        const startTime = Date.now();
+        
+        return new Promise(resolve => {
+          const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing function for smooth animation
+            const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+            const currentProgress = startProgress + (progressDiff * easeOutCubic);
+            
+            this.progress = currentProgress;
+            loadingBar.style.width = currentProgress + '%';
+            loadingPercent.textContent = Math.round(currentProgress) + '%';
+            
+            // Trigger bounce animation for percentage
+            loadingPercent.style.animation = 'none';
+            loadingPercent.offsetHeight; // Trigger reflow
+            loadingPercent.style.animation = 'percentBounce 0.5s ease-in-out';
+            
+            if (progress < 1) {
+              requestAnimationFrame(animate);
+            } else {
+              resolve();
+            }
+          };
+          animate();
+        });
+      }
+
+      delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      hide() {
+        const loadingWrapper = document.getElementById('loadingWrapper');
+        loadingWrapper.style.animation = 'loadingContainerExit 0.5s ease-in-out forwards';
+        setTimeout(() => {
+          loadingWrapper.style.display = 'none';
+          loadingWrapper.style.animation = '';
+          this.reset();
+        }, 500);
+      }
+
+      reset() {
+        this.currentStage = 0;
+        this.progress = 0;
+        const loadingBar = document.getElementById('loadingBar');
+        const loadingPercent = document.getElementById('loadingPercent');
+        const stages = document.querySelectorAll('.loading-stage');
+        
+        loadingBar.style.width = '0%';
+        loadingPercent.textContent = '0%';
+        
+        stages.forEach((stage, index) => {
+          stage.classList.remove('active', 'completed');
+          const icon = stage.querySelector('.loading-stage-icon');
+          icon.textContent = index + 1;
+        });
+        
+        // Reset last stage icon
+        const lastStage = document.querySelector('[data-stage="3"] .loading-stage-icon');
+        if (lastStage) lastStage.textContent = '✓';
+      }
+    }
+
+    // Add exit animation
+    const exitAnimationStyle = document.createElement('style');
+    exitAnimationStyle.textContent = `
+      @keyframes loadingContainerExit {
+        0% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.95);
+        }
+      }
+    `;
+    document.head.appendChild(exitAnimationStyle);
+
+    // Enhanced login handler with advanced loading
     document.getElementById("loginBtn").addEventListener("click", async (e) => {
       e.preventDefault();
 
@@ -101,34 +627,56 @@
         return;
       }
 
+      const loadingSequence = new LoadingSequence();
+
       try {
         btn.disabled = true;
         btn.classList.add('is-loading');
 
+        // Start advanced loading sequence
+        const loadingPromise = loadingSequence.start();
+
+        // Make actual API call
         const response = await fetch("http://localhost:3000/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include", // send cookies for session
+          credentials: "include",
           body: JSON.stringify({ username, password })
         });
 
         const result = await response.json();
 
+        // Wait for loading sequence to complete
+        await loadingPromise;
+
         if (response.ok) {
-          showSuccess(result.message || "Login successful!", { duration: 1200 });
-          // small delay so user sees the success toast
-          setTimeout(() => { window.location.href = "index.html"; }, 900);
+          // Show success stage briefly
+          await loadingSequence.delay(800);
+          
+          // Hide loading and redirect
+          loadingSequence.hide();
+          setTimeout(() => { 
+            window.location.href = "index.html"; 
+          }, 600);
         } else {
+          loadingSequence.hide();
           showError(result.error || result.message || "Login failed.");
         }
       } catch (error) {
         console.error("❌ Fetch failed:", error);
+        loadingSequence.hide();
         showError("Network error. Please try again.");
       } finally {
-        btn.disabled = false;
-        btn.classList.remove('is-loading');
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.classList.remove('is-loading');
+        }, 500);
       }
     });
   </script>
+
+  <a href="https://www.on-tym.solutions/" target="_blank" rel="noopener noreferrer">
+    <img src="/Ontym.png" alt="On-tym Logo" class="logo1" />
+  </a>
 </body>
 </html>

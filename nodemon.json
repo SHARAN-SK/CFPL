@@ -1,0 +1,24 @@
+{
+  "watch": [
+    "server.js",
+    "main.js",
+    "public/**/*",
+    "templates/**/*",
+    "*.js"
+  ],
+  "ignore": [
+    "node_modules/**/*",
+    "dist/**/*",
+    "*.log",
+    ".git/**/*",
+    "*.exe",
+    "*.msi"
+  ],
+  "ext": "js,html,css,json,docx,nsh",
+  "delay": 500,
+  "verbose": true,
+  "restartable": "rs",
+  "env": {
+    "NODE_ENV": "development"
+  }
+}

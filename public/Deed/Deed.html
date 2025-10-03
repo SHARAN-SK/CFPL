@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Compliance First - Deed of Partnership</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Enhanced Loading Bar from 1.html */
+    .loading-wrapper { display: none; margin: 10px 0 16px 0; }
+    .loading-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; color: #2e7d32; font-weight: 600; font-size: 13px; letter-spacing: 0.2px; }
+    .loading-track { position: relative; width: 100%; height: 8px; background: rgba(76, 175, 80, 0.15); border-radius: 999px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(46, 125, 50, 0.12); }
+    .loading-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: 999px; background-image: linear-gradient(90deg, #43a047, #66bb6a); box-shadow: 0 0 12px rgba(102, 187, 106, 0.6); transition: width 0.25s ease; }
+    .loading-bar::after { content: ""; position: absolute; inset: 0; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.25) 0, rgba(255,255,255,0.25) 10px, transparent 10px, transparent 20px); background-size: 28px 28px; animation: barberpole 0.9s linear infinite; border-radius: inherit; }
+    @keyframes barberpole { 0% { background-position: 0 0; } 100% { background-position: 28px 0; } }
+  </style>
 </head>
 <body>
   <div class="background"></div>
@@ -54,6 +63,17 @@
     <!-- Centered Convert button -->
     <div class="button-center" id="convertContainer" style="display:none;">
       <button id="convert" disabled>Convert to Word</button>
+    </div>
+
+    <!-- Loader HTML -->
+    <div id="loadingWrapper" class="loading-wrapper">
+      <div class="loading-header">
+        <span id="loadingLabel">Fetching company data…</span>
+        <span id="loadingPercent">0%</span>
+      </div>
+      <div class="loading-track">
+        <div id="loadingBar" class="loading-bar"></div>
+      </div>
     </div>
 
     <script>
@@ -252,7 +272,7 @@ convert.addEventListener("click", async function() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "Partnership Deed.docx";
+    a.download = `${document.getElementById("COMPANY_NAME").value} Deed.docx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -265,5 +285,8 @@ convert.addEventListener("click", async function() {
   </main>
 
   <a href="#" class="home-btn" onclick="event.preventDefault(); history.back();">← BACK</a>
+  <a href="https://www.on-tym.solutions/" target="_blank" rel="noopener noreferrer">
+    <img src="/Ontym.png" alt="On-tym Logo" class="fixed-bottom-logo" />
+  </a>
 </body>
 </html>

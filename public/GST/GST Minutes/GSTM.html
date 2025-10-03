@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>GST Registration - Compliance First</title>
     <link rel="stylesheet" href="style.css" />
+    <style>
+        /* Enhanced Loading Bar (mirrors 1.html) */
+        .loading-wrapper { display: none; margin: 10px 0 16px 0; }
+        .loading-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; color: #2e7d32; font-weight: 600; font-size: 13px; letter-spacing: 0.2px; }
+        .loading-track { position: relative; width: 100%; height: 8px; background: rgba(76, 175, 80, 0.15); border-radius: 999px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(46, 125, 50, 0.12); }
+        .loading-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: 999px; background-image: linear-gradient(90deg, #43a047, #66bb6a); box-shadow: 0 0 12px rgba(102, 187, 106, 0.6); transition: width 0.25s ease; }
+        .loading-bar::after { content: ""; position: absolute; inset: 0; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.25) 0, rgba(255,255,255,0.25) 10px, transparent 10px, transparent 20px); background-size: 28px 28px; animation: barberpole 0.9s linear infinite; border-radius: inherit; }
+        @keyframes barberpole { 0% { background-position: 0 0; } 100% { background-position: 28px 0; } }
+        .director-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+        
+    .dual-dropdown select {
+      flex: 1;
+}
+    </style>
 </head>
 <body>
     <div class="background"></div>
@@ -17,25 +36,96 @@
     <main>
         <div id="fetchSection" class="fetch-container">
             <label for="company">Enter Company Name:</label>
-            <input type="text" id="company" placeholder="e.g. Compliance First Pvt. Ltd" />
-            <button onclick="generatePrompt()">Fetch</button>
-            
-            <button id="pasteParseBtn" onclick="parseResponse()" style="display:none; margin-top:10px;">
-                Paste & Parse
-            </button>
+            <input type="text" id="company" class="uppercase-input" placeholder="e.g. Compliance First Pvt. Ltd" />
+            <div class="fetch-buttons-group" style="margin-top:10px;">
+                <button id="parseBtn1" onclick="parseResponse()">MCA Fetch</button>
+                <button id="parseBtn" onclick="parseResponse()">Falcon Fetch</button>
+            </div>
+            <div id="loadingWrapper" class="loading-wrapper">
+                <div class="loading-header">
+                    <span id="loadingLabel">Fetching company data…</span>
+                    <span id="loadingPercent">0%</span>
+                </div>
+                <div class="loading-track">
+                    <div id="loadingBar" class="loading-bar"></div>
+                </div>
+            </div>
             <div id="parsedDetails" style="margin-top: 0px;"></div>
         </div>
 
-        <div id="directorsSection"></div>
-        <div id="CA-BOX" class="fetch-container"></div>
-
-        <div class="button-center">
-        <button id="convert" style="display:none; margin-top: 20px;">Convert to Document</button>
+        <div id="directorsSection" style="display: none;"></div>
+        <div class="two-col" id="MEETING-AUDITOR-ROW" style="display: none;">
+            <div id="MEETING-BOX" class="fetch-container"  style="display: none;"></div>
+            <div id="CA-BOX" class="fetch-container" style="display: none;"></div>
         </div>
+        <div class="button-center" id="convertContainer" style="display: none;">
+            <button id="convert" disabled>Convert to Word</button>
+        </div>
+
     </main>
 
     <script>
+        // Auto-uppercase utility for inputs with class 'uppercase-input'
+        function addUppercaseListeners(root = document) {
+            const fields = root.querySelectorAll('.uppercase-input');
+            fields.forEach((field) => {
+                const toUpper = () => {
+                    if (typeof field.value === 'string') field.value = field.value.toUpperCase();
+                };
+                field.removeEventListener('input', toUpper);
+                field.addEventListener('input', toUpper);
+                field.removeEventListener('blur', toUpper);
+                field.addEventListener('blur', toUpper);
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function(){ addUppercaseListeners(document); });
+        let directorLabelText = "Director";
+
         // ========================= HELPER FUNCTIONS =========================
+
+        // Function to update all dropdowns with current members
+        function updateMemberDropdowns() {
+            const members = [];
+            
+            // Get all directors with their designations
+            document.querySelectorAll(".director-box1").forEach((box, i) => {
+                const nameField = box.querySelector(`#PERSON_${i+1}`);
+                const designationField = box.querySelector(`#PERSON_${i+1}_D`);
+                if (nameField && nameField.value.trim()) {
+                    const name = nameField.value.trim();
+                    const designation = designationField?.value.trim() || "";
+                    members.push({
+                        name: name,
+                        display: designation ? `${name} (${designation})` : name,
+                        plainName: name
+                    });
+                }
+            });
+            
+            // Exclude auditor from meeting dropdown member list by request
+            
+            // Update all dropdowns
+            const dropdowns = ['CHAIRMAN', 'RESOLVED_BY_1', 'RESOLVED_BY_2', 'VOTE_THANKS'];
+            dropdowns.forEach(dropdownId => {
+                const dropdown = document.getElementById(dropdownId);
+                if (dropdown) {
+                    const currentValue = dropdown.value;
+                    dropdown.innerHTML = '<option value="">-- Select Member --</option>';
+                    const usePlainName = ['CHAIRMAN', 'RESOLVED_BY_1', 'RESOLVED_BY_2'].includes(dropdownId);
+                    members.forEach(member => {
+                        const option = document.createElement('option');
+                        option.value = member.name;
+                        option.textContent =usePlainName ? member.plainName : member.display;
+                        dropdown.appendChild(option);
+                    });
+                    // Restore previous selection if it still exists
+                    const memberNames = members.map(m => m.name);
+                    if (memberNames.includes(currentValue)) {
+                        dropdown.value = currentValue;
+                    }
+                }
+            });
+        }
 
         // Function to update the auditor field value
         function updateAuditorField() {
@@ -50,6 +140,9 @@
             if (auditorField) {
                 auditorField.value = `${firmValue}, Chartered Accountants, FRN:${frnValue}, ${nameValue}${desValue}, having MRN:${mrnValue},${placeValue}`;
             }
+            
+            // Update dropdowns when auditor name changes
+            updateMemberDropdowns();
         }
 
         // Function to format a date into a "Deed" format
@@ -102,6 +195,26 @@
                 }
             });
             checkRequiredFields();
+        }
+
+        // Function to renumber all director boxes and sync IDs like 1.html
+        function renumberDirectors() {
+            const boxes = document.querySelectorAll('.director-box1');
+            boxes.forEach((box, i) => {
+                const newIndex = i + 1;
+                const oldIndex = box.getAttribute('data-index');
+                if (String(oldIndex) === String(newIndex)) return;
+                box.setAttribute('data-index', newIndex);
+                const header = box.querySelector('h4');
+                if (header) header.textContent = `${directorLabelText} ${newIndex}`;
+                const elementsWithOldId = box.querySelectorAll(`[id*='_${oldIndex}']`);
+                elementsWithOldId.forEach((el) => {
+                    el.id = el.id.replace(new RegExp(`_${oldIndex}$`), `_${newIndex}`);
+                });
+                const removeBtn = box.querySelector('.remove-btn');
+                if (removeBtn) removeBtn.setAttribute('onclick', `removeMemberField(${newIndex})`);
+            });
+            updateDistinctiveNumbers();
         }
 
         // Function to set up all event listeners after the DOM is rendered
@@ -177,6 +290,105 @@
             convertButton.disabled = !allFilled;
         }
 
+        // Helper to get next index like 1.html
+        function getNextMemberIndex() {
+            const boxes = document.querySelectorAll('.director-box1');
+            let maxIndex = 0;
+            boxes.forEach((box) => {
+                const idx = parseInt(box.getAttribute('data-index'));
+                if (idx > maxIndex) maxIndex = idx;
+            });
+            return maxIndex + 1;
+        }
+
+        // Create a member box HTML (mirrors 1.html style)
+        function createMemberBoxHTML(index, data = {}, isCompanyWithCIN = true) {
+            const label = isCompanyWithCIN ? 'Director' : 'Partner';
+            return `
+                <div class="director-box1" style="margin-top: 10px;" data-index="${index}">
+                    <div class="box-header">
+                        <h4>${label} ${index}</h4>
+                        <button class="remove-btn" onclick="removeMemberField(${index})">Remove</button>
+                    </div>
+                    <div class="editable-row">
+                        <label>NAME:</label>
+                        <input type="text" id="PERSON_${index}" class="editable-field" value="${data.name || ''}" required>
+                    </div>
+                    <div class="editable-row">
+                        <label>Designation:</label>
+                        <input type="text" id="PERSON_${index}_D" class="editable-field" value="${data.designation || ''}">
+                    </div>
+                    <div class="editable-row">
+                        <label>DIN:</label>
+                        <input type="text" id="PERSON_${index}_DIN" class="editable-field" value="${data.din || ''}" required>
+                    </div>
+                    <div class="editable-row">
+                        <label>No.of Equity Shares:</label>
+                        <input type="text" id="EQUITY_SHARES_${index}" class="editable-field" placeholder="eg: 1000" required>
+                    </div>
+                    <div class="editable-row">
+                        <label>Folio No:</label>
+                        <input type="text" id="FOLIO_${index}" class="editable-field" placeholder="eg: 001" required>
+                    </div>
+                    <div class="editable-row">
+                        <label>Certificate No:</label>
+                        <input type="text" id="CERTI_NO_${index}" class="editable-field" placeholder="eg: 001" required>
+                    </div>
+                    <div class="editable-row">
+                        <label>Distinctive No.:</label>
+                        <input type="text" id="FROM_${index}" class="editable-field distinctive-no" placeholder="From" readonly>
+                        <input type="text" id="TO_${index}" class="editable-field distinctive-no" placeholder="To" readonly>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Attach listeners to a member box like 1.html
+        function attachMemberFieldListeners(index) {
+            const box = document.querySelector(`.director-box1[data-index="${index}"]`);
+            if (!box) return;
+            const equityField = box.querySelector(`[id="EQUITY_SHARES_${index}"]`);
+            if (equityField) equityField.addEventListener('input', updateDistinctiveNumbers);
+            const nameField = box.querySelector(`[id="PERSON_${index}"]`);
+            if (nameField) nameField.addEventListener('input', updateMemberDropdowns);
+            const desField = box.querySelector(`[id="PERSON_${index}_D"]`);
+            if (desField) desField.addEventListener('input', updateMemberDropdowns);
+            box.querySelectorAll('input, textarea').forEach((field) => {
+                field.addEventListener('input', checkRequiredFields);
+            });
+        }
+
+        // Add new member field (single add button)
+        function addMemberField() {
+            const container = document.getElementById('directorFieldsContainer');
+            const newIndex = getNextMemberIndex();
+            const temp = document.createElement('div');
+            const isCIN = document.getElementById('COMPANY_ID')?.previousElementSibling?.textContent?.includes('CIN');
+            temp.innerHTML = createMemberBoxHTML(newIndex, {}, !!isCIN).trim();
+            const newBox = temp.firstChild;
+            container.appendChild(newBox);
+            attachMemberFieldListeners(newIndex);
+            renumberDirectors();
+            updateMemberDropdowns();
+            updateDistinctiveNumbers();
+            checkRequiredFields();
+        }
+
+        // Remove member field with minimum 1 remaining
+        function removeMemberField(index) {
+            const boxes = document.querySelectorAll('.director-box1');
+            if (boxes.length <= 1) {
+                alert('At least one member must remain!');
+                return;
+            }
+            const box = document.querySelector(`.director-box1[data-index="${index}"]`);
+            if (box) box.remove();
+            renumberDirectors();
+            updateMemberDropdowns();
+            updateDistinctiveNumbers();
+            checkRequiredFields();
+        }
+
         // ========================= MAIN FUNCTIONS =========================
 
         function generatePrompt() {
@@ -216,63 +428,82 @@ Rules for search and output:
             });
         }
 
-        function parseResponse() {
-            navigator.clipboard.readText()
-                .then((text) => {
-                    const response = text;
-                    const companyNameMatch = response.match(/Company Name:\s*(.*)/);
-                    const idMatch = response.match(/(CIN|LLPIN):\s*(.*)/);
-                    const doiMatch = response.match(/Date of Incorporation:\s*(.*)/);
-                    const typeMatch = response.match(/Company Type:\s*(.*)/);
-                    const addressMatch = response.match(/Registered Office Address:\s*([\s\S]*?)(?:Directors|Partners):/);
-                    const directorLabelMatch = response.match(/(Directors|Partners)\s*:/);
-                    const directorMatches = [...response.matchAll(/NAME\s*:\s*(.*?),\s*DESIGNATION\s*:\s*(.*?),\s*DIN\s*:\s*([^\n]+)/g)];
-                    let directors = directorMatches.map(d => ({
-                        name: d[1].trim(),
-                        designation: d[2].trim(),
-                        din: d[3].trim() || "Not Found"
-                    }));
-                    if (directors.length === 0) {
-                        directors = [
-                            { name: "", designation: "", din: "" },
-                            { name: "", designation: "", din: "" }
-                        ];
-                    }
-                    const parsedData = {
-                        companyName: companyNameMatch ? companyNameMatch[1] : '',
-                        companyIDLabel: idMatch ? idMatch[1] : 'ID',
-                        companyID: idMatch ? idMatch[2] : '',
-                        dateOfIncorporation: doiMatch ? doiMatch[1] : '',
-                        companyType: typeMatch ? typeMatch[1] : '',
-                        address: addressMatch ? addressMatch[1].trim() : '',
-                        directors,
-                        directorLabel: directorLabelMatch ? directorLabelMatch[1] : "Directors"
-                    };
-                    
-                    document.getElementById("pasteParseBtn").style.display = "none";
+        async function parseResponse() {
+            const companyInput = document.getElementById("company");
+            const company = (companyInput.value || "").trim();
+            if (!company) return;
 
-                    // Render HTML for company details
-                    document.getElementById("parsedDetails").innerHTML = `
+            const loadingWrapper = document.getElementById("loadingWrapper");
+            const loadingBar = document.getElementById("loadingBar");
+            const loadingPercent = document.getElementById("loadingPercent");
+            const loadingLabel = document.getElementById("loadingLabel");
+            loadingWrapper.style.display = "block";
+            loadingBar.style.width = "0%";
+            if (loadingPercent) loadingPercent.textContent = "0%";
+            if (loadingLabel) loadingLabel.textContent = "Fetching company data…";
+
+            // Smooth animated progress
+            let progress = 0;
+            let rafId = null;
+            const animate = () => {
+                progress += (95 - progress) * 0.05;
+                if (progress > 95) progress = 95;
+                loadingBar.style.width = progress + "%";
+                if (loadingPercent) loadingPercent.textContent = Math.round(progress) + "%";
+                rafId = requestAnimationFrame(animate);
+            };
+            rafId = requestAnimationFrame(animate);
+
+            try {
+                const res = await fetch(`/api/getdata?name=${encodeURIComponent(company)}`);
+                const data = await res.json();
+                const d = data?.data || {};
+                const haveCIN = !!d.CIN;
+                const companyIDLabel = haveCIN ? "CIN" : "LLPIN";
+                const companyID = haveCIN ? (d.CIN || "") : (d.LLPIN || "");
+                const dateOfIncorporation = d["Date of Incorporation"] || "";
+                const companyType = d.Activity || "";
+                const address = d.Address || "";
+                const directors = Array.isArray(d.Directors) && d.Directors.length ? d.Directors.map(x => ({
+                    name: x.Name || "",
+                    designation: x.Designation || "",
+                    din: x.DIN || ""
+                })) : [{},{}];
+
+                // Stop loader and finalize
+                if (rafId) cancelAnimationFrame(rafId);
+                loadingBar.style.width = "100%";
+                if (loadingPercent) loadingPercent.textContent = "100%";
+                if (loadingLabel) loadingLabel.textContent = "Finalizing…";
+                setTimeout(() => {
+                    loadingWrapper.style.display = "none";
+                    loadingBar.style.width = "0%";
+                    if (loadingPercent) loadingPercent.textContent = "0%";
+                    if (loadingLabel) loadingLabel.textContent = "Fetching company data…";
+                }, 300);
+
+                // Render details (reuse existing clipboard renderer template)
+                document.getElementById("parsedDetails").innerHTML = `
                         <h2>Parsed Company Details:</h2>
                         <div class="editable-row">
                             <label>Company Name:</label>
-                            <input type="text" id="COMPANY_NAME" class="editable-field" value="${parsedData.companyName || 'Not found'}">
+                            <input type="text" id="COMPANY_NAME" class="editable-field" value="${company || 'Not found'}">
                         </div>
                         <div class="editable-row">
-                            <label>${parsedData.companyIDLabel}:</label>
-                            <input type="text" id="COMPANY_ID" class="editable-field" value="${parsedData.companyID || 'Not found'}">
+                            <label>${companyIDLabel}:</label>
+                            <input type="text" id="COMPANY_ID" class="editable-field" value="${companyID || 'Not found'}">
                         </div>
                         <div class="editable-row">
                             <label>Date of Incorporation:</label>
-                            <input type="text" id="DATE_OF_INCORPORATION" class="editable-field" value="${parsedData.dateOfIncorporation || 'Not found'}">
+                            <input type="text" id="DATE_OF_INCORPORATION" class="editable-field" value="${dateOfIncorporation || 'Not found'}">
                         </div>
                         <div class="editable-row">
                             <label>Company Type:</label>
-                            <input type="text" id="COMPANY_TYPE" class="editable-field" value="${parsedData.companyType || 'Not found'}">
+                            <input type="text" id="COMPANY_TYPE" class="editable-field" value="${companyType || 'Not found'}">
                         </div>
                         <div class="editable-row">
                             <label>ADDRESS:</label>
-                            <textarea id="ADDRESS" class="editable-field" rows="3">${parsedData.address || 'Not found'}</textarea>
+                            <textarea id="ADDRESS" class="editable-field" rows="3">${address || 'Not found'}</textarea>
                         </div>
                         <div class="editable-row">
                             <label>Email:</label>
@@ -304,7 +535,6 @@ Rules for search and output:
                             <label>Rupees of Each Share:</label>
                             <input type="text" id="SHAR-EACH" class="editable-field" placeholder="eg: 100" required>
                         </div>
-                        
                         <div class="editable-row">
                             <label>BANK:</label>
                             <input type="text" id="BANK" class="editable-field" placeholder="eg: Axis Bank" required>
@@ -315,50 +545,51 @@ Rules for search and output:
                         </div>
                     `;
 
-                    // Render HTML for directors
-                    document.getElementById("directorsSection").innerHTML = `
-                        <div class="fetch-container1">
-                            ${parsedData.directors.map((d, i) => `
-                                <div class="director-box1" style="margin-top: 0px;" data-index="${i+1}">
-                                    <div class="director-header">
-                                        <h4>${parsedData.directorLabel.slice(0, -1)} ${i+1}</h4>
-                                    </div>
-                                    <div class="editable-row">
-                                        <label>NAME:</label>
-                                        <input type="text" id="PERSON_${i+1}" class="editable-field" value="${d.name}" required>
-                                    </div>
-                                    <div class="editable-row">
-                                        <label>Designation:</label>
-                                        <input type="text" id="PERSON_${i+1}_D" class="editable-field" value="${d.designation}">
-                                    </div>
-                                    <div class="editable-row">
-                                        <label>DIN:</label>
-                                        <input type="text" id="PERSON_${i+1}_DIN" class="editable-field" value="${d.din}" required>
-                                    </div>
-                                    <div class="editable-row">
-                                        <label>No.of Equity Shares:</label>
-                                        <input type="text" id="EQUITY_SHARES_${i+1}" class="editable-field" placeholder="eg: 1000" required>
-                                    </div>
-                                    <div class="editable-row">
-                                        <label>Folio No:</label>
-                                        <input type="text" id="FOLIO_${i+1}" class="editable-field" placeholder="eg: 001" required>
-                                    </div>
-                                    <div class="editable-row">
-                                        <label>Certificate No:</label>
-                                        <input type="text" id="CERTI_NO_${i+1}" class="editable-field" placeholder="eg: 001" required>
-                                    </div>
-                                    <div class="editable-row">
-                                        <label>Distinctive No.:</label>
-                                        <input type="text" id="FROM_${i+1}" class="editable-field distinctive-no" placeholder="From" readonly>
-                                        <input type="text" id="TO_${i+1}" class="editable-field distinctive-no" placeholder="To" readonly>
-                                    </div>
-                                </div>
-                            `).join('')}
+                document.getElementById("directorsSection").innerHTML = `
+                    <div class="director-controls">
+                        <h2>${haveCIN ? 'Director' : 'Partner'} Details</h2>
+                        <button onclick="addMemberField()">+ Add ${haveCIN ? 'Director' : 'Partner'}</button>
+                    </div>
+                    <div class="fetch-container1" id="directorFieldsContainer">
+                        ${directors.map((d, i) => createMemberBoxHTML(i + 1, d, haveCIN)).join('')}
+                    </div>
+                `;
+
+                // Render MEETING-BOX content
+                const meetingBox = document.getElementById("MEETING-BOX");
+                if (meetingBox) {
+                    meetingBox.innerHTML = `
+                        <h2>MEETING DETAILS:</h2>
+                        <div class="editable-row">
+                            <label>Chairman of the Meeting:</label>
+                            <select id="CHAIRMAN" class="editable-field" required>
+                                <option value="">-- Select Member --</option>
+                            </select>
+                        </div>
+                        <div class="editable-row dual-row">
+                            <label>Resolved That:</label>
+                            <div class="dual-dropdown">
+                                <select id="RESOLVED_BY_1" class="editable-field" required>
+                                    <option value="">-- Select Member 1 --</option>
+                                </select>
+                                <select id="RESOLVED_BY_2" class="editable-field" required>
+                                    <option value="">-- Select Member 2 --</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="editable-row">
+                            <label>Vote of Thanks:</label>
+                            <select id="VOTE_THANKS" class="editable-field" required>
+                                <option value="">-- Select Member --</option>
+                            </select>
                         </div>
                     `;
+                }
 
-                    // Render HTML for CA-BOX
-                    document.getElementById("CA-BOX").innerHTML = `
+                // Render CA-BOX (Auditor) content
+                const caBox = document.getElementById("CA-BOX");
+                if (caBox) {
+                    caBox.innerHTML = `
                         <h2>AUDITOR:</h2>
                         <div class="editable-row">
                             <label>Firm name:</label>
@@ -389,23 +620,42 @@ Rules for search and output:
                             <input type="text" id="AUDITOR" class="editable-field" readonly>
                         </div>
                     `;
+                }
 
-                    // Now that all the new HTML is on the page, set up the listeners for the new elements
-                    setupEventListeners();
-                    updateDistinctiveNumbers(); // Initial calculation
-                    checkRequiredFields(); // Initial check
-                    updateAuditorField(); // Initial update
-                    
-                    // Add event listeners for all editable fields to enable the convert button
-                    document.querySelectorAll("input, textarea").forEach(field => field.addEventListener("input", checkRequiredFields));
-                    
-                    // Attach click handler to the convert button
-                    const convertButton = document.getElementById("convert");
-                    if (convertButton) {
-                        convertButton.style.display = "block"; // Show the button
-                        convertButton.addEventListener("click", handleConvertClick);
-                    }
+                // Show hidden sections (two-column row visible)
+                document.getElementById("directorsSection").style.display = "block";
+                document.getElementById("MEETING-AUDITOR-ROW").style.display = "flex";
+                document.getElementById("MEETING-BOX").style.display = "block";
+                document.getElementById("CA-BOX").style.display = "block";
+                const convertWrap = document.getElementById("convertContainer");
+                if (convertWrap) convertWrap.style.display = "flex";
+
+                // Set up listeners and initial computations
+                setupEventListeners();
+                Array.from(document.querySelectorAll('.director-box1')).forEach((box) => {
+                    const idx = parseInt(box.getAttribute('data-index'));
+                    attachMemberFieldListeners(idx);
                 });
+                renumberDirectors();
+                updateDistinctiveNumbers();
+                checkRequiredFields();
+                updateAuditorField();
+                updateMemberDropdowns();
+                const convertButton = document.getElementById("convert");
+                if (convertButton) {
+                    convertButton.style.display = "block";
+                    convertButton.addEventListener("click", handleConvertClick);
+                }
+
+            } catch (err) {
+                console.error(err);
+                // Stop loader on error
+                if (rafId) cancelAnimationFrame(rafId);
+                loadingWrapper.style.display = "none";
+                loadingBar.style.width = "0%";
+                if (loadingPercent) loadingPercent.textContent = "0%";
+                if (loadingLabel) loadingLabel.textContent = "Fetching company data…";
+            }
         }
         
         async function handleConvertClick() {
@@ -438,11 +688,19 @@ Rules for search and output:
                 SHARE_EACH: document.getElementById("SHAR-EACH").value,
                 PLACE: document.getElementById("PLACE").value,
                 AUDITOR: document.getElementById("AUDITOR").value,
+                CHAIRMAN: document.getElementById("CHAIRMAN").value,
+                RESOLVED_BY_1: document.getElementById("RESOLVED_BY_1").value,
+                RESOLVED_BY_2: document.getElementById("RESOLVED_BY_2").value,
+                VOTE_THANKS: document.getElementById("VOTE_THANKS").value,
                 directors,
                 DEED_DATE: document.getElementById("DEED_DATE").value,
                 DAY: document.getElementById("DAY").value,
                 BANK: document.getElementById("BANK").value,
                 BRANCH: document.getElementById("BRANCH").value,
+                CHAIRMAN: document.getElementById("CHAIRMAN").value,
+                R1: document.getElementById("RESOLVED_BY_1").value,
+                R2: document.getElementById("RESOLVED_BY_2").value,
+                VOTE: document.getElementById("VOTE_THANKS").value,
             };
 
             try {
@@ -460,7 +718,7 @@ Rules for search and output:
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = "GST Minutes.docx";
+                a.download = `${document.getElementById("COMPANY_NAME").value} Minutes.docx`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
@@ -470,5 +728,8 @@ Rules for search and output:
             }
         }
     </script>
+     <a href="https://www.on-tym.solutions/" target="_blank" rel="noopener noreferrer">
+       <img src="/Ontym.png" alt="On-tym Logo" class="fixed-bottom-logo" />
+     </a>
 </body>
 </html>

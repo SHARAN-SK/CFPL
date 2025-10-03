@@ -22,97 +22,100 @@
   <main>
     <div id="fetchSection" class="fetch-container">
       <label for="company">Enter Company Name:</label>
-
-      <input type="text" id="company" placeholder="e.g. Compliance First Pvt. Ltd" />
-      <button onclick="generatePrompt()">Fetch</button>
-
-      <!-- Paste & Parse button directly inside fetchSection -->
-      <button id="pasteParseBtn" onclick="parseResponse()" style="display:none; margin-top:10px;">
-        Paste & Parse
-      </button>
-
+      <input type="text" id="company" class="uppercase-input" placeholder="e.g. Compliance First Pvt. Ltd" />
+      <div class="fetch-buttons-group" style="margin-top:10px;">
+        <button id="parseBtn1" onclick="parseResponse()">MCA Fetch</button>
+        <button id="parseBtn" onclick="parseResponse()">Falcon Fetch</button>
+      </div>
+      <div id="loadingWrapper" class="loading-wrapper" style="display:none; margin-top:10px;">
+        <div class="loading-header" style="display:flex;justify-content:space-between;align-items:center;color:#2e7d32;font-weight:600;font-size:13px;">
+          <span id="loadingLabel">Fetching company data…</span>
+          <span id="loadingPercent">0%</span>
+        </div>
+        <div class="loading-track" style="position:relative;width:100%;height:8px;background:rgba(76,175,80,0.15);border-radius:999px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(46,125,50,0.12);">
+          <div id="loadingBar" class="loading-bar" style="position:absolute;left:0;top:0;bottom:0;width:0%;border-radius:999px;background-image:linear-gradient(90deg,#43a047,#66bb6a);"></div>
+        </div>
+      </div>
       <div id="parsedDetails" style="margin-top: 0px;"></div>
     </div>
   </main>
 
   <script>
-    function generatePrompt() {
-      const company = document.getElementById("company").value.trim();
-      if (!company) return;
-
-      const prompt = `Fetch based on public sources like MCA Portal, ZaubaCorp, InstaFinancials, The Company Check, and other verified Indian company/LLP databases.
-
-Give ONLY the following EXACT information for the company named "${company}" in the following format:
-
-Company Name: [Company Name]
-[CIN or LLPIN Label]: [CIN or LLPIN]
-Date of Incorporation: [DD Month YYYY]
-Company Type: [Private Limited/LLP/etc]
-Registered Office Address: [Address]
-
-[Directors or Partners Label] :
-NAME: [Name], DESIGNATION: [Designation], DIN: [DIN]
-
-Rules for search and output:
-1. Conduct an EXTREME, deep, and exhaustive search across at least three verified public sources.
-2. Cross-verify all details from a minimum of two sources to confirm accuracy before generating the final output.
-3. The response MUST include all specified fields.
-4. If the company is an LLP, provide the LLPIN. If it is a Private Limited company, provide the CIN. Do not show both. The label should dynamically display as either "CIN:" or "LLPIN:".
-5. The label should dynamically display as either "Directors:" or "Partners:".
-6. All DIN numbers for all directors MUST be fetched and displayed. Do not use placeholders like 'Not Available'. The data will be available in the open sources. If a DIN is genuinely not found after an exhaustive search, explicitly state it for that specific director, but only as a last resort after all other avenues have been exhausted.
-7. The date of incorporation and registered address must be complete and accurate.
-8. Double-check all details one last time before outputting the final result to ensure no information is missing or incorrect.
-`;
-
-      navigator.clipboard.writeText(prompt).then(() => {
-        window.open("https://gemini.google.com/app", "_blank");
-
-        document.querySelector("label[for='company']").style.display = "none";
-        document.getElementById("company").style.display = "none";
-        document.querySelector("#fetchSection button").style.display = "none"; // hides Fetch button
-
-        document.getElementById("pasteParseBtn").style.display = "inline-block"; // show Paste & Parse button
-
-        document.getElementById("fetchSection").scrollIntoView({ behavior: "smooth" });
+    // Auto-uppercase utility for inputs with class 'uppercase-input'
+    function addUppercaseListeners(root = document) {
+      const fields = root.querySelectorAll('.uppercase-input');
+      fields.forEach((field) => {
+        const toUpper = () => {
+          if (typeof field.value === 'string') field.value = field.value.toUpperCase();
+        };
+        field.removeEventListener('input', toUpper);
+        field.addEventListener('input', toUpper);
+        field.removeEventListener('blur', toUpper);
+        field.addEventListener('blur', toUpper);
       });
     }
+    document.addEventListener('DOMContentLoaded', function(){ addUppercaseListeners(document); });
+    async function parseResponse() {
+      const companyInput = document.getElementById("company");
+      const company = (companyInput.value || "").trim();
+      if (!company) return;
 
-    function parseResponse() {
-      navigator.clipboard.readText()
-        .then((text) => {
-          const response = text;
-          const companyNameMatch = response.match(/Company Name:\s*(.*)/);
-          const idMatch = response.match(/(CIN|LLPIN):\s*(.*)/);
-          const doiMatch = response.match(/Date of Incorporation:\s*(.*)/);
-          const typeMatch = response.match(/Company Type:\s*(.*)/);
-          const addressMatch = response.match(/Registered Office Address:\s*([\s\S]*?)Directors:/);
+      const loadingWrapper = document.getElementById("loadingWrapper");
+      const loadingBar = document.getElementById("loadingBar");
+      const loadingPercent = document.getElementById("loadingPercent");
+      const loadingLabel = document.getElementById("loadingLabel");
+      loadingWrapper.style.display = "block";
+      loadingBar.style.width = "0%";
+      if (loadingPercent) loadingPercent.textContent = "0%";
+      if (loadingLabel) loadingLabel.textContent = "Fetching company data…";
 
-          const directorMatches = [...response.matchAll(/NAME\s*:\s*(.*?),\s*DESIGNATION\s*:\s*(.*?),\s*DIN\s*:\s*([^\n]+)/g)];
+      let progress = 0;
+      let rafId = null;
+      const animate = () => {
+        progress += (95 - progress) * 0.05;
+        if (progress > 95) progress = 95;
+        loadingBar.style.width = progress + "%";
+        if (loadingPercent) loadingPercent.textContent = Math.round(progress) + "%";
+        rafId = requestAnimationFrame(animate);
+      };
+      rafId = requestAnimationFrame(animate);
 
-          let directors = directorMatches.map(d => ({
-            name: d[1].trim(),
-            designation: d[2].trim(),
-            din: d[3].trim() || "Not Found"
-          }));
-          if (directors.length === 0) {
-            directors = [
-              { name: "", designation: "", din: "" },
-              { name: "", designation: "", din: "" }
-            ];
-          }
+      try {
+        const res = await fetch(`/api/getdata?name=${encodeURIComponent(company)}`);
+        const data = await res.json();
+        const d = data?.data || {};
+        const haveCIN = !!d.CIN;
+        const companyIDLabel = haveCIN ? "CIN" : "LLPIN";
+        const companyID = haveCIN ? (d.CIN || "") : (d.LLPIN || "");
+        const dateOfIncorporation = d["Date of Incorporation"] || "";
+        const companyType = d.Activity || "";
+        const address = d.Address || "";
+        const directors = Array.isArray(d.Directors) && d.Directors.length ? d.Directors.map(x => ({
+          name: x.Name || "",
+          designation: x.Designation || "",
+          din: x.DIN || ""
+        })) : [{}, {}];
 
-          const parsedData = {
-            companyName: companyNameMatch ? companyNameMatch[1] : '',
-            companyIDLabel: idMatch ? idMatch[1] : 'ID',
-            companyID: idMatch ? idMatch[2] : '',
-            dateOfIncorporation: doiMatch ? doiMatch[1] : '',
-            companyType: typeMatch ? typeMatch[1] : '',
-            address: addressMatch ? addressMatch[1].trim() : '',
-            directors
-          };
+        if (rafId) cancelAnimationFrame(rafId);
+        loadingBar.style.width = "100%";
+        if (loadingPercent) loadingPercent.textContent = "100%";
+        if (loadingLabel) loadingLabel.textContent = "Finalizing…";
+        setTimeout(() => {
+          loadingWrapper.style.display = "none";
+          loadingBar.style.width = "0%";
+          if (loadingPercent) loadingPercent.textContent = "0%";
+          if (loadingLabel) loadingLabel.textContent = "Fetching company data…";
+        }, 300);
 
-
-          document.getElementById("pasteParseBtn").style.display = "none"; // hide Paste & Parse after parsing
+        const parsedData = {
+          companyName: company,
+          companyIDLabel,
+          companyID,
+          dateOfIncorporation,
+          companyType,
+          address,
+          directors
+        };
 
           document.getElementById("parsedDetails").innerHTML = `
           
@@ -275,10 +278,14 @@ document.getElementById('DATE').addEventListener('input', function(e) {
           checkRequiredFields();
 
           convert.addEventListener("click", handleConvertClick);
-        })
-        .catch(() => {
-          // silently fail
-        });
+      } catch (err) {
+        console.error(err);
+        if (rafId) cancelAnimationFrame(rafId);
+        loadingWrapper.style.display = "none";
+        loadingBar.style.width = "0%";
+        if (loadingPercent) loadingPercent.textContent = "0%";
+        if (loadingLabel) loadingLabel.textContent = "Fetching company data…";
+      }
     }
 
     async function handleConvertClick() {
@@ -320,7 +327,7 @@ document.getElementById('DATE').addEventListener('input', function(e) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "GST Resolution.docx";
+        a.download = `${document.getElementById("COMPANY_NAME").value} Resolution.docx`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -330,6 +337,8 @@ document.getElementById('DATE').addEventListener('input', function(e) {
       }
     }
   </script>
-  
+  <a href="https://www.on-tym.solutions/" target="_blank" rel="noopener noreferrer">
+    <img src="/Ontym.png" alt="On-tym Logo" class="fixed-bottom-logo" />
+  </a>
 </body>
 </html>

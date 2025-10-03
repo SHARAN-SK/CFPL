@@ -4,7 +4,30 @@ const { fork } = require('child_process');
 const http = require('http');
 const { autoUpdater } = require('electron-updater');
 
-// Set the user data path before the app is ready
+// Enable live reload for Electron in development
+if (process.env.NODE_ENV === 'development') {
+  require('electron-reload')(__dirname, {
+    electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
+    hardResetMethod: 'exit',
+    ignore: /node_modules|[\/\\]\.|dist|\.git/,
+    awaitWriteFinish: true
+  });
+  
+  // Also watch for changes in public and templates directories
+  require('electron-reload')(path.join(__dirname, 'public'), {
+    electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
+    hardResetMethod: 'exit',
+    awaitWriteFinish: true
+  });
+  
+  require('electron-reload')(path.join(__dirname, 'templates'), {
+    electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
+    hardResetMethod: 'exit',
+    awaitWriteFinish: true
+  });
+}
+
+// Store app data in custom folder
 app.setPath('userData', path.join(app.getPath('userData'), 'cfpl-app'));
 
 let serverProcess;
@@ -40,9 +63,7 @@ app.whenReady().then(() => {
   const serverPath = path.join(appPath, 'server.js');
 
   // Start backend server
-  serverProcess = fork(serverPath, [], {
-    silent: true
-  });
+  serverProcess = fork(serverPath, [], { silent: true });
 
   serverProcess.stdout.on('data', (data) => {
     console.log(`Server stdout: ${data}`);
@@ -54,25 +75,51 @@ app.whenReady().then(() => {
 
   pollServer(createWindow);
 
-  // 🔹 Auto-updater check
+  // ======================
+  // ⚡ Auto-Updater Events
+  // ======================
   autoUpdater.checkForUpdatesAndNotify();
 
-  autoUpdater.on('update-available', () => {
+  autoUpdater.on('checking-for-update', () => {
+    console.log('🔍 Checking for updates...');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('✅ Update available:', info.version);
     dialog.showMessageBox({
       type: 'info',
       title: 'Update Available',
-      message: 'A new version is downloading in the background.'
+      message: `A new version (${info.version}) is downloading in the background.`
     });
   });
 
-  autoUpdater.on('update-downloaded', () => {
+  autoUpdater.on('update-not-available', () => {
+    console.log('🚀 App is up to date.');
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('❌ Update error:', err);
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    console.log(
+      `📥 Download speed: ${progress.bytesPerSecond} - ` +
+      `${progress.percent.toFixed(2)}% complete ` +
+      `(${progress.transferred}/${progress.total})`
+    );
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('🎉 Update downloaded:', info.version);
     dialog.showMessageBox({
       type: 'info',
       title: 'Update Ready',
       message: 'Restart now to install the latest version?',
       buttons: ['Restart', 'Later']
     }).then(result => {
-      if (result.response === 0) autoUpdater.quitAndInstall();
+      if (result.response === 0) {
+        autoUpdater.quitAndInstall();
+      }
     });
   });
 

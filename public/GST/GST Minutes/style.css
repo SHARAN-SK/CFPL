@@ -15,7 +15,7 @@ body, html {
   left: 0;
   height: 100vh;
   width: 100vw;
-  background-image: url('bg.png');
+  background-image: url('/bg.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -30,6 +30,21 @@ body, html {
   display: block;
   margin-left: auto;
   margin-right: auto;
+}
+
+/* Force uppercase for company name inputs like 1.html */
+#company,
+#COMPANY_NAME {
+  text-transform: uppercase;
+}
+
+.fixed-bottom-logo {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 100px;
+  height: auto;
+  z-index: 1000;
 }
 
 .company-name {
@@ -98,6 +113,7 @@ body, html {
 .fetch-container input {
   padding: 10px;
   width: 70%;
+  max-width: 420px;
   margin-top: 10px;
   border-radius: 6px;
   border: 1px solid #aaa;
@@ -266,6 +282,36 @@ body, html {
   box-shadow: 0 0 5px #65ac4c; 
 }
 
+/* Improve native select look and fit */
+select.editable-field {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #fff;
+  background-image: linear-gradient(45deg, transparent 50%, #4e8c3c 50%),
+                    linear-gradient(135deg, #4e8c3c 50%, transparent 50%),
+                    linear-gradient(to right, #ccc, #ccc);
+  background-position: calc(100% - 22px) calc(50% - 3px),
+                       calc(100% - 16px) calc(50% - 3px),
+                       calc(100% - 2.5rem) 50%;
+  background-size: 6px 6px, 6px 6px, 1px 1.6em;
+  background-repeat: no-repeat;
+  padding-right: 2.8rem; /* room for caret */
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  font-size: 14px;
+}
+
+select.editable-field:hover {
+  border-color: #4e8c3c;
+}
+
+select.editable-field:focus {
+  border-color: #4e8c3c;
+  box-shadow: 0 0 0 3px rgba(78, 140, 60, 0.15);
+}
+
 textarea.editable-field {
   resize: vertical;
 }
@@ -375,4 +421,113 @@ input[type="text"], textarea {
 .remove-btn:hover {
   transform: translateY(-3px) scale(1.01);
   box-shadow: 0 10px 16px rgba(0,0,0,0.25);
+}
+
+/* Added to mirror 1.html card headers */
+.box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #65ac4c;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+}
+
+.box-header h4 {
+  margin: 0;
+  font-size: 1em;
+  color: #666;
+}
+
+/* Controls row for add button */
+.director-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding: 0 5px;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 10px;
+}
+
+.director-controls h2 {
+  margin: 0;
+  font-size: 1.2em;
+  color: #333;
+}
+
+.director-controls button {
+  padding: 8px 15px;
+  background-color: #65ac4c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.director-controls button:hover {
+  background-color: #65ac4c;
+}
+
+/* Two-column layout for Meeting and Auditor sections */
+.two-col {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  justify-content: center;
+  max-width: 1100px;
+  margin: 0 auto 30px auto;
+}
+
+.two-col > .fetch-container {
+  flex: 1 1 0;
+  min-width: 320px;
+}
+
+/* Responsive stack for smaller screens */
+@media (max-width: 900px) {
+  .two-col {
+    flex-direction: column;
+  }
+}
+
+/* Dual dropdown should auto-fit available space */
+.dual-row {
+  align-items: stretch;
+}
+
+.dual-dropdown {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.dual-dropdown select {
+  flex: 1 1 auto;
+  min-width: 0; /* allow shrinking within container */
+}
+
+/* Make long dropdowns not overflow their card */
+.fetch-container select.editable-field {
+  max-width: 100%;
+}
+
+/* Improve spacing for inner sections */
+#MEETING-BOX h2,
+#CA-BOX h2 {
+  margin-top: 0;
+}
+
+/* Loader/Button Loading Style from 1.html */
+.option-btn.is-loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.85;
+}
+.option-btn.is-loading::after {
+  content: "…";
+  position: absolute;
+  right: 12px;
 }
